@@ -1,0 +1,30 @@
+plugins {
+    id 'java'
+}
+
+apply plugin: 'java'
+
+group 'nl.dgoossens'
+version '1.0'
+sourceCompatibility = 1.8
+compileJava.options.encoding = 'UTF-8'
+
+ext {
+    spigotVersion = '1.14-R0.1-SNAPSHOT'
+}
+
+repositories {
+    jcenter()
+    mavenCentral()
+    mavenLocal()
+    maven { url 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
+    maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+    maven { url 'https://libraries.minecraft.net/' }
+}
+
+dependencies {
+    // General Compilation Only Dependencies
+    compileOnly "org.spigotmc:spigot:${spigotVersion}"
+    compileOnly group: 'com.mojang', name: 'authlib', version: '1.5.21'
+    compile group: 'com.google.code.gson', name: 'gson', version: '2.7'
+}
