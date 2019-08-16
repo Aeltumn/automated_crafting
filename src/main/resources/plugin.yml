@@ -1,6 +1,6 @@
 main: nl.dgoossens.autocraft.AutomatedCrafting
 name: AutomatedCrafting
-version: 1.0
+version: 1.12/1.14-1.0
 description: An open-source autocrafting plugin for spigot.
 load: STARTUP
 author: Daniël Goossens
@@ -8,4 +8,3 @@ website: https://dgoossens.nl/
 loadbefore: []
 commands:
 permissions:
-api-version: 1.13
