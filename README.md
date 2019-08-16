@@ -5,11 +5,27 @@ An open-source plugin for spigot which adds powerful autocrafters capable of aut
 
 **How to use**
 
-1) Place a dropper in the world. ![Step 1](https://i.ibb.co/Mg3hKbD/2019-08-16-16-13-13.png)
-2) Put an item frame on any side of the dropper. ![Step 2](https://i.ibb.co/vccK0T8/2019-08-16-16-13-21.png)
-3) Put the item you want to craft in the item frame. ![Step 3](https://i.ibb.co/fxQ3p96/2019-08-16-16-13-30.png)
-4) Fill up the dropper with the crafting ingredients. ![Step 4](https://i.ibb.co/5nCPpct/2019-08-16-16-13-44.png)
-5) Enjoy your new autocrafter! ![Step 5](https://i.ibb.co/6Nqq03s/2019-08-16-16-13-50.png)
+1) Place a dropper in the world.
+
+![Step 1](https://i.ibb.co/Mg3hKbD/2019-08-16-16-13-13.png)
+
+
+2) Put an item frame on any side of the dropper.
+
+![Step 2](https://i.ibb.co/vccK0T8/2019-08-16-16-13-21.png)
+
+
+3) Put the item you want to craft in the item frame.
+
+![Step 3](https://i.ibb.co/fxQ3p96/2019-08-16-16-13-30.png)
+
+4) Fill up the dropper with the crafting ingredients.
+
+![Step 4](https://i.ibb.co/5nCPpct/2019-08-16-16-13-44.png)
+
+5) Enjoy your new autocrafter!
+
+![Step 5](https://i.ibb.co/6Nqq03s/2019-08-16-16-13-50.png)
 
 <br/><br/>
 
