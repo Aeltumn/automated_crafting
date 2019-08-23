@@ -87,6 +87,9 @@ public class CreationListener implements Listener {
                 new BukkitRunnable() {
                     public void run() {
                         ItemStack item = ((ItemFrame) e.getRightClicked()).getItem();
+                        Dropper d = (Dropper) dropper.getState();
+                        d.setCustomName("Autocrafter"); //Rename it to autocrafter to make this clear to the player.
+                        d.update();
                         instance.getDropperRegistry().create(d.getLocation(), item);
                         instance.getDropperRegistry().checkDropper(d.getLocation(), e.getPlayer());
                     }
