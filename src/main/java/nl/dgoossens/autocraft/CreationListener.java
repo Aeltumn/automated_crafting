@@ -1,5 +1,6 @@
 package nl.dgoossens.autocraft;
 
+import nl.dgoossens.autocraft.helpers.BlockPos;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Dropper;
@@ -47,30 +48,32 @@ public class CreationListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBreak(BlockBreakEvent e) {
-        breakDropper(e.getBlock()); //Destroying the item frame break the autocrafter.
+        breakDropper(e.getBlock(), true); //Destroying the item frame break the autocrafter.
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onDestroy(HangingBreakEvent e) {
-        destroyDropper(e.getEntity()); //Destroying the item frame break the autocrafter.
+        destroyDropper(e.getEntity(), true); //Destroying the item frame break the autocrafter.
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onStealItem(EntityDamageByEntityEvent e) {
-        destroyDropper(e.getEntity()); //Stealing the item from the item frame destroys the autocrafter.
+        destroyDropper(e.getEntity(), false); //Stealing the item from the item frame destroys the autocrafter.
     }
 
-    private void destroyDropper(final Entity itemFrame) {
+    private void destroyDropper(final Entity itemFrame, final boolean clean) {
         if(!(itemFrame instanceof ItemFrame)) return;
         final Block dropper = itemFrame.getLocation().getBlock().getRelative(((ItemFrame) itemFrame).getAttachedFace());
-        breakDropper(dropper);
+        breakDropper(dropper, clean);
     }
-    private void breakDropper(final Block dropper) {
+    private void breakDropper(final Block dropper, final boolean clean) {
         if(dropper.getState() instanceof Dropper) {
             instance.getDropperRegistry().destroy(dropper.getLocation());
-            Dropper d = (Dropper) dropper.getState();
-            d.setCustomName("Dropper"); //Set the name back to the default dropper.
-            d.update();
+            if(clean) {
+                Dropper d = (Dropper) dropper.getState();
+                d.setCustomName("Dropper"); //Set the name back to the default dropper.
+                d.update();
+            }
         }
     }
 
