@@ -51,6 +51,8 @@ public class MainDropperTick extends BukkitRunnable {
                 final List<JsonElement> ingredients = rl.getIngredients(r);
                 if(ingredients==null) continue; //Continue to the next recipe.
 
+                System.out.println("Ingredients are: "+ingredients);
+
                 AutoPreCraftItemEvent event = new AutoPreCraftItemEvent(r, block, m);
                 Bukkit.getPluginManager().callEvent(event);
                 if(event.isCancelled()) continue; //Continue to the next recipe.

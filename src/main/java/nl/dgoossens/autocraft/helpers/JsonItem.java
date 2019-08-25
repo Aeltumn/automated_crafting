@@ -2,6 +2,7 @@ package nl.dgoossens.autocraft.helpers;
 
 import com.google.gson.annotations.Expose;
 import nl.dgoossens.autocraft.AutomatedCrafting;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
@@ -34,8 +35,12 @@ public class JsonItem {
             }
             ItemStack its = new ItemStack(mat, count, data);
             ItemMeta meta = its.getItemMeta();
-            if(displayName!=null) meta.setDisplayName(displayName);
-            if(!lore.isEmpty()) meta.setLore(lore);
+            if(displayName!=null) meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', displayName));
+            if(!lore.isEmpty()) {
+                List<String> newlore = new ArrayList<>();
+                for(String s : lore) newlore.add(ChatColor.translateAlternateColorCodes('&', s));
+                meta.setLore(newlore);
+            }
             enchantments.forEach((k, v) -> {
                 Enchantment e = Enchantment.getByName(k);
                 if(e==null) {
@@ -53,6 +58,7 @@ public class JsonItem {
     public JsonItem() {}
     public JsonItem(Material m) { item = "minecraft:"+m.name().toLowerCase(); }
     public JsonItem(ItemStack stack) {
+        if(stack==null) return;
         item = "minecraft:"+stack.getType().name().toLowerCase();
         count = stack.getAmount();
         data = stack.getDurability();

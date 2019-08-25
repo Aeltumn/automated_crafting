@@ -11,8 +11,13 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.net.URI;
+import java.net.URL;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -62,13 +67,16 @@ public class RecipeLoader {
         //Load our custom recipes first to allow the to overwrite!
         File recipeFolder = new File(instance.getDataFolder(), "recipes");
         recipeFolder.mkdirs(); //Create folders  if they don't exist yet.
-        searchFolder(recipeFolder);
+        try {
+            searchFolder(recipeFolder.toPath());
+        } catch(Exception x) { x.printStackTrace(); }
 
         if(MinecraftVersion.get()==MinecraftVersion.TWELVE) {
             //Fallback loading from assets in 1.12
             try {
-                Path path = Paths.get(getClass().getResource("/assets/minecraft/recipes").toURI());
-                searchFolder(path.toFile());
+                URI uri = Bukkit.class.getResource("/assets/.mcassetsroot").toURI();
+                Path path = FileSystems.newFileSystem(uri, Collections.emptyMap()).getPath("/assets/minecraft/recipes");
+                searchFolder(path);
             } catch(Exception x) { x.printStackTrace(); }
         }
 
@@ -80,7 +88,7 @@ public class RecipeLoader {
             if(bukkitRecipe instanceof Keyed) {
                 if(!loadedFilenames.contains(((Keyed) bukkitRecipe).getKey().getKey()+".json")) {
                     //Have we already loaded it?
-                    //System.out.println("[DEBUG] Loaded "+((Keyed) bukkitRecipe).getKey().getKey()+".json");
+                    //System.out.println("[DEBUG] Backup loaded "+((Keyed) bukkitRecipe).getKey().getKey()+".json");
                     Recipe r = new Recipe(bukkitRecipe);
                     if(!r.getType().equalsIgnoreCase("crafting_shaped") &&
                             !r.getType().equalsIgnoreCase("crafting_shapeless")) continue; //We don't want the others!
@@ -94,22 +102,19 @@ public class RecipeLoader {
         instance.getLogger().info("Finished reloading "+loadedRecipes.size()+" recipes, took "+(System.currentTimeMillis()-t)+" ms...");
     }
 
-    private void searchFolder(final File file) {
-        if(file==null) return;
-        File[] files = file.listFiles();
-        if(files==null) return;
-        for(final File f : files)
-            loadFile(f);
+    private void searchFolder(final Path path) throws Exception {
+        if(path==null) return;
+        Files.walk(path).forEach(this::loadFile);
     }
 
-    private void loadFile(final File file) {
-        if(!file.getName().endsWith(".json")) return;
-        if(loadedFilenames.contains(file.getName())) return; //Don't load the same filename twice! (allows overwriting)
-        loadedFilenames.add(file.getName());
-        //System.out.println("[DEBUG] Loaded "+file.getName());
+    private void loadFile(final Path file) {
+        if(!file.toString().endsWith(".json")) return;
+        if(loadedFilenames.contains(file.getFileName().toString())) return; //Don't load the same filename twice! (allows overwriting)
+        loadedFilenames.add(file.getFileName().toString());
+        //System.out.println("[DEBUG] Loaded "+file.getFileName().toString());
         try {
-            final FileReader fileReader = new FileReader(file);
-            final JsonReader reader = new JsonReader(fileReader);
+            final BufferedReader bufferedReader = new BufferedReader(Files.newBufferedReader(file));
+            final JsonReader reader = new JsonReader(bufferedReader);
             loadReader(reader);
         } catch(Exception x) {
             x.printStackTrace();

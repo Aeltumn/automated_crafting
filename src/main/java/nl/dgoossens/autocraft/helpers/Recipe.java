@@ -62,9 +62,10 @@ public class Recipe {
                     key.put(k, value);
                 });
             } catch(Exception x) {
-                ((ShapedRecipe) bukkitRecipe).getIngredientMap().forEach((k, v) ->
-                    key.put(k, AutomatedCrafting.GSON_ITEM.toJsonTree(new JsonItem(v)))
-                );
+                ((ShapedRecipe) bukkitRecipe).getIngredientMap().forEach((k, v) -> {
+                    if(v==null) return;
+                    key.put(k, AutomatedCrafting.GSON_ITEM.toJsonTree(new JsonItem(v)));
+                });
             }
         } else if(bukkitRecipe instanceof ShapelessRecipe) {
             type = "crafting_shapeless";
