@@ -51,8 +51,6 @@ public class MainDropperTick extends BukkitRunnable {
                 final List<JsonElement> ingredients = rl.getIngredients(r);
                 if(ingredients==null) continue; //Continue to the next recipe.
 
-                System.out.println("Ingredients are: "+ingredients);
-
                 AutoPreCraftItemEvent event = new AutoPreCraftItemEvent(r, block, m);
                 Bukkit.getPluginManager().callEvent(event);
                 if(event.isCancelled()) continue; //Continue to the next recipe.
@@ -184,7 +182,7 @@ public class MainDropperTick extends BukkitRunnable {
                     try {
                         tagSuccess = tag!=null && (boolean) tagMethod.invoke(tag, i.getType());
                     } catch(Exception x) { x.printStackTrace(); }
-                    if(tagSuccess || (item.getStack().isSimilar(i))) { //This is equals() in the normal method, we need isSimilar because we don't care about amount.
+                    if(tagSuccess || item.getStack().isSimilar(i)) { //This is equals() in the normal method, we need isSimilar because we don't care about amount.
                         amount -= i.getAmount(); //More logical usage of the amount for our implementation.
                         if(amount <= 0) {
                             return item;

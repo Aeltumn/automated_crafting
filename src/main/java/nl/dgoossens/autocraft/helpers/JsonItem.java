@@ -1,6 +1,7 @@
 package nl.dgoossens.autocraft.helpers;
 
 import com.google.gson.annotations.Expose;
+import net.minecraft.server.v1_12_R1.Block;
 import nl.dgoossens.autocraft.AutomatedCrafting;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -24,11 +25,26 @@ public class JsonItem {
 
     private ItemStack stackCache;
 
+    private static final Class<?> block = ReflectionHelper.getNMSClass("Block");
+    private static final Class<?> itemClass = ReflectionHelper.getNMSClass("Item");
+
     public int getAmount() { return count; }
     public String getTag() { return tag; }
     public ItemStack getStack() {
         if(stackCache==null) { //This is only meant for the resulting items, not the ingredients!
-            Material mat = Material.getMaterial(item.substring("minecraft:".length()).toUpperCase());
+            Material mat = null;
+            if(MinecraftVersion.get().atLeast(MinecraftVersion.THIRTEEN))
+                mat = Material.getMaterial(item.substring("minecraft:".length()).toUpperCase());
+            else {
+                try {
+                    mat = Material.getMaterial((int) block.getMethod("getId", block).invoke(null, block.getMethod("getByName", String.class).invoke(null, item)));
+                } catch(Exception x) { x.printStackTrace(); }
+                if(mat==null || mat==Material.AIR) {
+                    try {
+                        mat = Material.getMaterial((int) itemClass.getMethod("getId", itemClass).invoke(null, itemClass.getMethod("b", String.class).invoke(null, item)));
+                    } catch(Exception x) { x.printStackTrace(); }
+                }
+            }
             if(mat==null) {
                 stackCache = new ItemStack(Material.COBBLESTONE);
                 return stackCache;
