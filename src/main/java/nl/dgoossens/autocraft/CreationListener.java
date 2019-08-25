@@ -25,6 +25,10 @@ public class CreationListener implements Listener {
     private AutomatedCrafting instance;
     public CreationListener(AutomatedCrafting instance) { this.instance=instance; }
 
+    /**
+     * Returns true if this block is both a dropper
+     * and if it's seen as an autocrafter.
+     */
     private boolean isDropper(final Block dropper) {
         final BlockPos bp = new BlockPos(dropper);
         return dropper.getState() instanceof Dropper && instance.getDropperRegistry().droppers.keySet().parallelStream().anyMatch(bp::equals);
@@ -36,6 +40,7 @@ public class CreationListener implements Listener {
             Block dropper = ((Dispenser) e.getSource().getHolder()).getBlock();
             if(isDropper(dropper))
                 e.setCancelled(true); //Autocrafters can't drop items normally. This is to avoid dispensing ingredients when powered.
+                    //This method specifically is needed because when droppers put the item directly into the neighbouring container the BlockDispenseEvent is not fired.
         }
     }
 
@@ -76,7 +81,7 @@ public class CreationListener implements Listener {
     private void breakDropper(final Block dropper, final boolean clean) {
         if(dropper.getState() instanceof Dropper) {
             instance.getDropperRegistry().destroy(dropper.getLocation());
-            if(clean) {
+            if(clean) { //Clean should be true when the item is removed from the item frame. (can actually be true at all times but we don't need to update droppers randomly if you're placing down item frames, could break redstone)
                 Dropper d = (Dropper) dropper.getState();
                 d.setCustomName("Dropper"); //Set the name back to the default dropper.
                 d.update();
@@ -98,6 +103,7 @@ public class CreationListener implements Listener {
                     public void run() {
                         ItemStack item = ((ItemFrame) e.getRightClicked()).getItem();
                         Dropper d = (Dropper) dropper.getState();
+                        //The dropper is named autocrafter is it has an item frame AND there's an item in the item frame. If the item frame is empty the name should be Dropper.
                         d.setCustomName("Autocrafter"); //Rename it to autocrafter to make this clear to the player.
                         d.update();
                         instance.getDropperRegistry().create(d.getLocation(), item);

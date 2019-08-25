@@ -7,6 +7,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.Map;
 
+//This class is currently quite messsy and will get replaced with a copy of the Nucleus version after it has made its way into Nucleus' utilities package.
 public class SerializedItem {
     public static final Class<?> mojangsonParser = ReflectionHelper.getNMSClass("MojangsonParser");
     public static final Class<?> craftItemStack = ReflectionHelper.getBukkitClass("inventory.CraftItemStack");
@@ -17,7 +18,10 @@ public class SerializedItem {
     private Map<String, Object> meta;
     private String nbt;
 
-    public SerializedItem(ItemStack item) { build(item); }
+    public SerializedItem(ItemStack item) {
+        build(item);
+    }
+
     public ItemStack getItem() {
         if(this.item==null) return null;
         ItemStack ret = ItemStack.deserialize(this.item);
@@ -32,6 +36,7 @@ public class SerializedItem {
         } catch(Exception x) { x.printStackTrace(); }
         return ret;
     }
+
     private void build(ItemStack item) {
         if(item==null) return;
         if(item.hasItemMeta()) meta = item.getItemMeta().serialize();
@@ -45,7 +50,6 @@ public class SerializedItem {
             nbt = tag.toString();
         } catch(Exception x) { x.printStackTrace(); }
     }
-
 
     @Override
     public String toString() {

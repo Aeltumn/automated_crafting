@@ -24,8 +24,10 @@ import java.util.stream.Stream;
 public class MainDropperTick extends BukkitRunnable {
     private final DropperRegistry dr;
     private final RecipeLoader rl;
+
     private Class<?> tagClass = null;
     private Method tagMethod = null;
+
     public MainDropperTick(final DropperRegistry dropperRegistry,
             final RecipeLoader recipeLoader) {
         this.dr=dropperRegistry; this.rl=recipeLoader;

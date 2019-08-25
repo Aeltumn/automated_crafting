@@ -16,6 +16,11 @@ import static nl.dgoossens.autocraft.helpers.ReflectionHelper.getNMSClass;
 /**
  * Copied from Nucleus at https://github.com/daniel-goossens/nucleus/blob/develop/src/main/java/nl/dgoossens/nucleus/utils/spigot/item/NBTUtils.java
  * 25/08/2019 13:00
+ *
+ * Has various edits for a possible future update to the original NBTUtils class.
+ * These edits are to add support for setting non-string NBT and listing all nbt, perhaps a future update of this plugin will allow
+ * recipe items to have custom nbt too. Currently this is unsupported because NBT brings a lot of parsing between how it is represented and
+ * because it needs to be interacted with through NMS.
  */
 public class NBTUtils {
     public static final Class<?> craftItemStack = getBukkitClass("inventory.CraftItemStack");

@@ -25,18 +25,19 @@ public class Recipe {
     //Shapeless Recipes
     @Expose private Set<JsonElement> ingredients = new HashSet<>();
 
+    //A few NMS classes we use because 1.12 is outdated and doesn't support cool recipes yet.
     private static final Class<?> recipeChoice = ReflectionHelper.getOptionalNMSClass("org.bukkit.inventory.RecipeChoice").orElse(null);
     private static final Class<?> exactChoice = ReflectionHelper.getOptionalNMSClass("org.bukkit.inventory.RecipeChoice.ExactChoice").orElse(null);
     private static final Class<?> materialChoice = ReflectionHelper.getOptionalNMSClass("org.bukkit.inventory.RecipeChoice.MaterialChoice").orElse(null);
 
-    public Recipe() {}
+    public Recipe() {} //Needed for GSON, probably.
     public Recipe(org.bukkit.inventory.Recipe bukkitRecipe) {
         result = new JsonItem(bukkitRecipe.getResult());
         if(bukkitRecipe instanceof ShapedRecipe) {
             type = "crafting_shaped";
             pattern = ((ShapedRecipe) bukkitRecipe).getShape();
             try {
-                //1.13+ only
+                //1.13+ only, please excuse the mess because I currently can't be bothered to make this pretty
                 Map<Character, Object> choiceMap = (Map<Character, Object>) ShapedRecipe.class.getMethod("getChoiceMap").invoke(bukkitRecipe);
                 choiceMap.forEach((k, v) -> {
                     JsonElement value = null;

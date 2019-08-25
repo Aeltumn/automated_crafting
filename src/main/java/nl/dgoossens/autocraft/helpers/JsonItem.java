@@ -1,7 +1,6 @@
 package nl.dgoossens.autocraft.helpers;
 
 import com.google.gson.annotations.Expose;
-import net.minecraft.server.v1_12_R1.Block;
 import nl.dgoossens.autocraft.AutomatedCrafting;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -14,6 +13,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * A currently messy implementation of a json-parsable item, might get implemented in the Nucleus utilities in the future.
+ */
 public class JsonItem {
     @Expose private String item = "minecraft:cobblestone";
     @Expose private String tag;

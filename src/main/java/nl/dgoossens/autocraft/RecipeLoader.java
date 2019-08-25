@@ -28,12 +28,46 @@ public class RecipeLoader {
     private Set<String> loadedFilenames = new HashSet<>();
     private Set<Recipe> loadedRecipes = new HashSet<>();
 
+    public RecipeLoader(final AutomatedCrafting inst) {
+        instance=inst;
+        //We load the recipes once on start, this is all we do on 1.12.
+        new BukkitRunnable() {
+            public void run() {
+                reload(null);
+            }
+        }.runTaskAsynchronously(instance);
+    }
+
+    /**
+     * Get a list containing the names of all files that were loaded, includes .json!
+     * For example:
+     * [ acacia_boat.json, iron_ingot.json, furnace.json ]
+     */
+    public Set<String> getLoadedFileNames() { return loadedFilenames; }
+
+    /**
+     * Get all recipes that were loaded.
+     * These recipes are always shapeless or shaped as we ignore furnace, stonecutter,
+     * loom, etc. recipes.
+     */
     public Set<Recipe> getLoadedRecipes() { return loadedRecipes; }
+
+    /**
+     * Get all recipes that will create the given itemstack. If the given itemstack
+     * has a displayname and the recipe result does not the recipe will not be returned!
+     */
     public Set<Recipe> getRecipesFor(final ItemStack item) {
         return loadedRecipes.parallelStream()
                 .filter(f -> f.getResult().getStack().isSimilar(item))
                 .collect(Collectors.toSet());
     }
+
+    /**
+     * Get a list of all ingredients that this recipe uses.
+     * Every JsonElement can be either of two things:
+     *   - A JsonItem (use AutomatedCrafting.GSON_ITEM.fromJson(jsonElement, JsonItem.class)) to get it.
+     *   - A JsonArray of JsonItem's (forEach() through the list and then use AutomatedCrafting.GSON_ITEM.fromJson(jsonElement, JsonItem.class)) on each element)
+     */
     public List<JsonElement> getIngredients(final Recipe recipe) {
         if(recipe==null) return new ArrayList<>();
         List<JsonElement> ret = new ArrayList<>();
@@ -47,16 +81,19 @@ public class RecipeLoader {
         return ret;
     }
 
-    public RecipeLoader(final AutomatedCrafting inst) {
-        instance=inst;
-        //We load the recipes once on start, this is all we do on 1.12.
-        new BukkitRunnable() {
-            public void run() {
-                reload(null);
-            }
-        }.runTaskAsynchronously(instance);
-    }
-
+    /**
+     * Reloads all recipes, in 1.12 the recipes are read from within the jar
+     * from the assets folder.
+     * All recipes are always loaded from the /recipes/ folder in the plugin data.
+     * Lastly, the bukkit recipe iterator is checked and any unknown recipes
+     * from that list (based on filename/key) are also loaded.
+     *
+     * In 1.14 all recipes are loaded from the bukkit recipe iterator as it is possible
+     * to fetch the data when multiple ingredients are allowed from bukkit recipes in 1.14.
+     *
+     * (haven't actually checked if this works properly in 1.13, but if it doesn't it won't get fixed
+     * because I'm not making a custom datapack loader)
+     */
     protected void reload(final CommandSender listener) {
         if(listener!=null) listener.sendMessage("Reloading recipes...");
         instance.getLogger().info("Reloading recipes...");
@@ -102,16 +139,26 @@ public class RecipeLoader {
         instance.getLogger().info("Finished reloading "+loadedRecipes.size()+" recipes, took "+(System.currentTimeMillis()-t)+" ms...");
     }
 
+    /**
+     * Automatically walks through the folder at the path
+     * and loads all files in it.
+     */
     private void searchFolder(final Path path) throws Exception {
         if(path==null) return;
         Files.walk(path).forEach(this::loadFile);
     }
 
+    /**
+     * Loads a single file at a path.
+     * This is passed as a Path instead of a File because
+     * we also use this to load .json files as resources from
+     * within the jar if it's 1.12 and we're loading the recipes
+     * from the /assets/ directory.
+     */
     private void loadFile(final Path file) {
         if(!file.toString().endsWith(".json")) return;
         if(loadedFilenames.contains(file.getFileName().toString())) return; //Don't load the same filename twice! (allows overwriting)
         loadedFilenames.add(file.getFileName().toString());
-        //System.out.println("[DEBUG] Loaded "+file.getFileName().toString());
         try {
             final BufferedReader bufferedReader = new BufferedReader(Files.newBufferedReader(file));
             final JsonReader reader = new JsonReader(bufferedReader);
@@ -121,6 +168,9 @@ public class RecipeLoader {
         }
     }
 
+    /**
+     * Loads a single recipe from a JsonReader.
+     */
     private void loadReader(final JsonReader reader) throws Exception {
         if(!reader.hasNext() || reader.peek() != JsonToken.BEGIN_OBJECT) return;
         Recipe r = AutomatedCrafting.GSON.fromJson(reader, Recipe.class);

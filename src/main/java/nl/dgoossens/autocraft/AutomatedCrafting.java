@@ -36,10 +36,9 @@ public class AutomatedCrafting extends JavaPlugin {
             return;
         }
 
-        recipeLoader = new RecipeLoader(this);
-        registry = new DropperRegistry(this);
+        recipeLoader = new RecipeLoader(this); //The recipe loader keeps track of all the recipes the autocrafters support.
+        registry = new DropperRegistry(this); //The dropper regstiry tracks all autocrafters and ticks them to craft every second.
         Bukkit.getPluginManager().registerEvents(new CreationListener(this), this);
-        Bukkit.getPluginManager().registerEvents(new ReloadCommandListener(this), this);
     }
 
     @Override
