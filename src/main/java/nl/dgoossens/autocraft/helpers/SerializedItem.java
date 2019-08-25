@@ -1,9 +1,7 @@
-package nl.dgoossens.autocraft;
+package nl.dgoossens.autocraft.helpers;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import nl.dgoossens.autocraft.AutomatedCrafting;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -48,9 +46,9 @@ public class SerializedItem {
         } catch(Exception x) { x.printStackTrace(); }
     }
 
-    protected static final Gson GSON = new GsonBuilder().create();
+
     @Override
     public String toString() {
-        return GSON.toJson(this);
+        return AutomatedCrafting.GSON.toJson(this);
     }
 }

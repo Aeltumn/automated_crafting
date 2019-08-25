@@ -29,36 +29,32 @@ public class CreationListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onDispense(BlockDispenseEvent e) {
+    public void onDispense(final BlockDispenseEvent e) {
         Block dropper = e.getBlock();
         if(isDropper(dropper))
             e.setCancelled(true); //Autocrafters can't drop items normally. This is to avoid dispensing ingredients when powered.
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onCreate(HangingPlaceEvent e) {
+    public void onCreate(final HangingPlaceEvent e) {
         Block dropper = e.getEntity().getLocation().getBlock().getRelative(e.getEntity().getAttachedFace());
-        if(dropper.getState() instanceof Dropper) {
-            Dropper d = (Dropper) dropper.getState();
-            d.setCustomName("Autocrafter"); //Rename it to autocrafter to make this clear to the player.
-            d.update();
-            instance.getDropperRegistry().create(d.getLocation(), null);
-        }
+        if(dropper.getState() instanceof Dropper)
+            instance.getDropperRegistry().create(dropper.getLocation(), null);
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onBreak(BlockBreakEvent e) {
-        breakDropper(e.getBlock(), true); //Destroying the item frame break the autocrafter.
+    public void onBreak(final BlockBreakEvent e) {
+        breakDropper(e.getBlock(), false); //Destroying the item frame break the autocrafter.
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onDestroy(HangingBreakEvent e) {
-        destroyDropper(e.getEntity(), true); //Destroying the item frame break the autocrafter.
+    public void onDestroy(final HangingBreakEvent e) {
+        destroyDropper(e.getEntity(), false); //Destroying the item frame break the autocrafter.
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onStealItem(EntityDamageByEntityEvent e) {
-        destroyDropper(e.getEntity(), false); //Stealing the item from the item frame destroys the autocrafter.
+    public void onStealItem(final EntityDamageByEntityEvent e) {
+        destroyDropper(e.getEntity(), true); //Stealing the item from the item frame destroys the autocrafter.
     }
 
     private void destroyDropper(final Entity itemFrame, final boolean clean) {
@@ -78,7 +74,7 @@ public class CreationListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onClickItemFrame(PlayerInteractEntityEvent e) {
+    public void onClickItemFrame(final PlayerInteractEntityEvent e) {
         if(e.getRightClicked().getType().equals(EntityType.ITEM_FRAME)) {
             Block dropper = e.getRightClicked().getLocation().getBlock().getRelative(((ItemFrame) e.getRightClicked()).getAttachedFace());
             if(dropper.getState() instanceof Dropper) {

@@ -32,13 +32,14 @@ An open-source plugin for spigot which adds powerful autocrafters capable of aut
 **Other Features**
 - Autocrafters will put the items in the container on the block the dropper is facing towards, otherwise the item will be dropped.
 - Powering the dropper makes it stop automatically crafting. (locking the dropper also has this effect)
-- Plugins can cancel the AutoCraftItemEvent in this plugin to disable certain items from being automatically crafting, for example the code below will block any diamond helmets from being crafted.
+- Plugins can cancel the AutoPreCraftItemEvent in this plugin to disable certain items from being automatically crafting, for example the code below will block any diamond helmets from being crafted.
 ```java
 @EventHandler
-public void onAutoCraft(AutoCraftItemEvent e) {
+public void onAutoCraft(AutoPreCraftItemEvent e) {
     if(e.getCraftedItem().getType()==Material.DIAMOND_HELMET) e.setCancelled(true);
 }
 ```
+- Alternatively plugins  can cancel AutoPostCraftItemEvent to undo the crafting just before it is completed. Here you can also get the itemstacks that will be used up.
 
 <br/> <br/>
 

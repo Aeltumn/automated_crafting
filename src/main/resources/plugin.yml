@@ -6,5 +6,12 @@ load: STARTUP
 author: Daniël Goossens
 website: https://dgoossens.nl/
 loadbefore: []
+api-version: 1.13
 commands:
+  reloadrecipes:
+    permission: automatedcrafting.reload
+    description: Reloads all recipes for the autocrafters, gets ran automatically when running /reload!
 permissions:
+  automatedcrafting.reload:
+    default: op
+    description: Allows you to use /reloadrecipes.

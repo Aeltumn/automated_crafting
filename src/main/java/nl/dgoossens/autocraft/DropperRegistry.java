@@ -8,16 +8,16 @@ import com.google.gson.stream.JsonWriter;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
+import nl.dgoossens.autocraft.events.AutoPreCraftItemEvent;
+import nl.dgoossens.autocraft.helpers.BlockPos;
+import nl.dgoossens.autocraft.helpers.Recipe;
+import nl.dgoossens.autocraft.helpers.SerializedItem;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.Dropper;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.Recipe;
-import org.bukkit.inventory.ShapedRecipe;
-import org.bukkit.inventory.ShapelessRecipe;
 
-import javax.annotation.Nullable;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DropperRegistry {
     protected ConcurrentHashMap<BlockPos, ItemStack> droppers = new ConcurrentHashMap<>();
     private File file;
+    private final RecipeLoader recipeLoader;
 
     /**
      * Checks the validity of the item in the item frame, notifies the player in chat.
@@ -43,9 +44,7 @@ public class DropperRegistry {
             else player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText("&7Autocrafter has redstone signal blocking it"));
             return;
         }
-        final Set<Recipe> recipes = getRecipe(m);
-        if(recipes!=null)
-            recipes.removeIf(r -> getIngredients(r)==null); //Ignore smelting recipes.
+        final Set<Recipe> recipes = recipeLoader.getRecipesFor(m);
         if(recipes==null || recipes.size()==0) {
             player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText("&7Autocrafter can't craft this item"));
             return;
@@ -54,7 +53,7 @@ public class DropperRegistry {
         int size = recipes.size();
         recipes.removeIf(f -> {
             if(f==null) return true;
-            AutoCraftItemEvent event = new AutoCraftItemEvent(f, getIngredients(f), block, m);
+            AutoPreCraftItemEvent event = new AutoPreCraftItemEvent(f, block, m);
             Bukkit.getPluginManager().callEvent(event);
             return event.isCancelled();
         });
@@ -75,37 +74,11 @@ public class DropperRegistry {
         return TextComponent.fromLegacyText(ChatColor.translateAlternateColorCodes('&', text));
     }
 
-    /**
-     * Get all recipes that result in the target item.
-     */
-    @Nullable
-    public Set<Recipe> getRecipe(final ItemStack itemStack) {
-        Iterator<Recipe> recipes = Bukkit.recipeIterator();
-        Set<Recipe> ret = new HashSet<>();
-        while(recipes.hasNext()) {
-            Recipe r = recipes.next();
-            if(!itemStack.isSimilar(r.getResult())) continue;
-            ret.add(r);
-        }
-        return ret.isEmpty() ? null : ret;
-    }
-
-    /**
-     * Get the set of ingredients used in this recipe or
-     * null if this recipe isn't a crafting table recipe. (shaped/shapeless)
-     *
-     * This is a list because sometimes the same item is used multiple times.
-     */
-    @Nullable
-    public List<ItemStack> getIngredients(final Recipe recipe) {
-        if(recipe instanceof ShapelessRecipe) return new ArrayList<>(((ShapelessRecipe) recipe).getIngredientList());
-        else if(recipe instanceof ShapedRecipe) return new ArrayList<>(((ShapedRecipe) recipe).getIngredientMap().values());
-        return null;
-    }
-
     public DropperRegistry(final AutomatedCrafting instance) {
         load(instance);
-        new MainDropperTick(this).runTaskTimer(instance, 27, 27);
+        recipeLoader = instance.getRecipeLoader();
+
+        new MainDropperTick(this, recipeLoader).runTaskTimer(instance, 27, 27);
     }
 
     /**
@@ -145,7 +118,7 @@ public class DropperRegistry {
                 Gson g = new GsonBuilder().create();
                 while(jr.hasNext()) {
                     String n = jr.nextName();
-                    droppers.put(g.fromJson(jr, BlockPos.class), SerializedItem.GSON.fromJson(n, SerializedItem.class).getItem());
+                    droppers.put(g.fromJson(jr, BlockPos.class), AutomatedCrafting.GSON.fromJson(n, SerializedItem.class).getItem());
                 }
                 jr.endObject();
                 jr.close();

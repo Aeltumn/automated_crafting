@@ -1,5 +1,6 @@
-package nl.dgoossens.autocraft;
+package nl.dgoossens.autocraft.helpers;
 
+import nl.dgoossens.autocraft.AutomatedCrafting;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
@@ -38,6 +39,6 @@ public class BlockPos {
 
     @Override
     public String toString() {
-        return SerializedItem.GSON.toJson(this);
+        return AutomatedCrafting.GSON.toJson(this);
     }
 }
