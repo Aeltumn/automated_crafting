@@ -100,7 +100,7 @@ public class MainDropperTick extends BukkitRunnable {
                     }
                 }
                 //Drop the item if no container wants it.
-                if(loc.getWorld()!=null) loc.getWorld().dropItemNaturally(loc, r.getResult().getStack());
+                if(loc.getWorld()!=null) loc.getWorld().dropItemNaturally(loc.clone().add(0.5, 0.25, 0.5), r.getResult().getStack());
                 return false; //If one recipe got completed, stop the crafting.
             }
             return false;
