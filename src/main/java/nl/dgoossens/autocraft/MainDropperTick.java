@@ -73,7 +73,9 @@ public class MainDropperTick extends BukkitRunnable {
                     }
 
                     //If we've got the ingredient we remove it and remember we've removed it.
-                    removed.put(found.getStack(), found.getStack().getAmount()); //If we have to revert this we need to give back ite.getAmount() because we already repopulate the rest.
+                    int s = found.getStack().getAmount();
+                    if(removed.containsKey(found.getStack())) s += removed.get(found.getStack());
+                    removed.put(found.getStack(), s); //If we have to revert this we need to give back ite.getAmount() because we already repopulate the rest.
 
                     //Set the total to be minus the amount we want. The function will automatically add the current amount to this.
                     repopulate(dropper.getInventory(), found.getStack(), -found.getStack().getAmount());
