@@ -1,10 +1,7 @@
 package nl.dgoossens.autocraft.helpers;
 
-import com.google.gson.JsonElement;
 import com.google.gson.annotations.Expose;
 import nl.dgoossens.autocraft.AutomatedCrafting;
-import org.apache.commons.lang.WordUtils;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
@@ -54,7 +51,7 @@ public class JsonItem {
     }
 
     public JsonItem() {}
-    public JsonItem(Material m) { item = m.getKey().toString(); }
+    public JsonItem(Material m) { item = "minecraft:"+m.name().toLowerCase(); }
     public JsonItem(ItemStack stack) {
         item = "minecraft:"+stack.getType().name().toLowerCase();
         count = stack.getAmount();

@@ -8,7 +8,6 @@ import nl.dgoossens.autocraft.helpers.Recipe;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.Tag;
 import org.bukkit.block.Block;
 import org.bukkit.block.Dropper;
 import org.bukkit.inventory.Inventory;
@@ -18,15 +17,22 @@ import org.bukkit.material.Dispenser;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.*;
 import java.util.stream.Stream;
 
 public class MainDropperTick extends BukkitRunnable {
     private final DropperRegistry dr;
     private final RecipeLoader rl;
+    private Class<?> tagClass = null;
+    private Method tagMethod = null;
     public MainDropperTick(final DropperRegistry dropperRegistry,
             final RecipeLoader recipeLoader) {
         this.dr=dropperRegistry; this.rl=recipeLoader;
+        try {
+            tagClass = Class.forName("org.bukkit.Tag");
+            tagMethod = tagClass.getMethod("isTagged", Object.class);
+        } catch(Exception x) { } //Tags don't exist before 1.14.
     }
     
     @Override
@@ -77,7 +83,7 @@ public class MainDropperTick extends BukkitRunnable {
                     removed.forEach((k, v) -> repopulate(dropper.getInventory(), k, v)); //Put everything back nicely.
                     continue; //Continue to the next recipe.
                 }
-                //If we pass this we'll always conplete the craft, items are already removed from the dropper.
+                //If we pass this we'll always complete the craft, items are already removed from the dropper.
 
                 //Check if there's a container nearby that wants the data.
                 final Dispenser dispenser = (Dispenser) dropper.getData(); //Dropper is a dispenser too!
@@ -153,15 +159,17 @@ public class MainDropperTick extends BukkitRunnable {
             int var4 = (var3 = inv.getStorageContents()).length;
 
             for(JsonItem item : amounts.keySet()) {
-                Tag<Material> tag = null;
-                if(item.getTag()!=null) {
-                    for(Field f : Tag.class.getDeclaredFields()) {
-                        if(f.getType().equals(Tag.class)) {
-                            if(item.getTag().equalsIgnoreCase("minecraft:"+f.getName().toLowerCase())) {
-                                try {
-                                    tag = (Tag<Material>) f.get(null);
-                                    break;
-                                } catch(Exception x) { x.printStackTrace(); }
+                Object tag = null;
+                if(tagClass!=null) {
+                    if(item.getTag()!=null) {
+                        for(Field f : tagClass.getDeclaredFields()) {
+                            if(f.getType().equals(tagClass)) {
+                                if(item.getTag().equalsIgnoreCase("minecraft:"+f.getName().toLowerCase())) {
+                                    try {
+                                        tag = f.get(null);
+                                        break;
+                                    } catch(Exception x) { x.printStackTrace(); }
+                                }
                             }
                         }
                     }
@@ -170,7 +178,11 @@ public class MainDropperTick extends BukkitRunnable {
                 int amount = amounts.get(item);
                 for(int var5 = 0; var5 < var4; ++var5) {
                     ItemStack i = var3[var5];
-                    if((tag!=null && tag.isTagged(i.getType())) || (item.getStack().isSimilar(i))) { //This is equals() in the normal method, we need isSimilar because we don't care about amount.
+                    boolean tagSuccess = false;
+                    try {
+                        tagSuccess = tag!=null && (boolean) tagMethod.invoke(tag, i.getType());
+                    } catch(Exception x) { x.printStackTrace(); }
+                    if(tagSuccess || (item.getStack().isSimilar(i))) { //This is equals() in the normal method, we need isSimilar because we don't care about amount.
                         amount -= i.getAmount(); //More logical usage of the amount for our implementation.
                         if(amount <= 0) {
                             return item;

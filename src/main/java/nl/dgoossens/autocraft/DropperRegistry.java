@@ -62,6 +62,7 @@ public class DropperRegistry {
             player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText("&7Crafting this item has been disabled"));
             return;
         }
+
         //No recipes got removed
         if(recipes.size()==size) player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText("&7Autocrafter is accepting "+recipes.size()+" recipe(s)"));
         else player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText("&7Autocrafter is accepting "+recipes.size()+" recipe(s), "+(size-recipes.size())+" were disabled")); //also tell how many of the recipes got blocked

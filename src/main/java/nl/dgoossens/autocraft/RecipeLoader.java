@@ -55,6 +55,8 @@ public class RecipeLoader {
     protected void reload(final CommandSender listener) {
         if(listener!=null) listener.sendMessage("Reloading recipes...");
         instance.getLogger().info("Reloading recipes...");
+        loadedRecipes.clear();
+        loadedFilenames.clear();
 
         long t = System.currentTimeMillis();
         //Load our custom recipes first to allow the to overwrite!

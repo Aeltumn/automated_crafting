@@ -4,7 +4,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.annotations.Expose;
 import nl.dgoossens.autocraft.AutomatedCrafting;
-import org.bukkit.inventory.RecipeChoice;
+import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.ShapelessRecipe;
 
@@ -24,27 +25,47 @@ public class Recipe {
     //Shapeless Recipes
     @Expose private Set<JsonElement> ingredients = new HashSet<>();
 
+    private static final Class<?> recipeChoice = ReflectionHelper.getOptionalNMSClass("org.bukkit.inventory.RecipeChoice").orElse(null);
+    private static final Class<?> exactChoice = ReflectionHelper.getOptionalNMSClass("org.bukkit.inventory.RecipeChoice.ExactChoice").orElse(null);
+    private static final Class<?> materialChoice = ReflectionHelper.getOptionalNMSClass("org.bukkit.inventory.RecipeChoice.MaterialChoice").orElse(null);
+
     public Recipe() {}
     public Recipe(org.bukkit.inventory.Recipe bukkitRecipe) {
         result = new JsonItem(bukkitRecipe.getResult());
         if(bukkitRecipe instanceof ShapedRecipe) {
             type = "crafting_shaped";
             pattern = ((ShapedRecipe) bukkitRecipe).getShape();
-            ((ShapedRecipe) bukkitRecipe).getChoiceMap().forEach((k, v) -> {
-                JsonElement value = null;
-                JsonArray jsonArray = new JsonArray();
-                if(v instanceof RecipeChoice.ExactChoice) {
-                    ((RecipeChoice.ExactChoice) v).getChoices()
-                            .forEach(i -> jsonArray.add(AutomatedCrafting.GSON_ITEM.toJsonTree(new JsonItem(i))));
-                } else if(v instanceof RecipeChoice.MaterialChoice) {
-                    ((RecipeChoice.MaterialChoice) v).getChoices()
-                            .forEach(i -> jsonArray.add(AutomatedCrafting.GSON_ITEM.toJsonTree(new JsonItem(i))));
-                } else if(v!=null) //V can be null for some reason.
-                    value = AutomatedCrafting.GSON_ITEM.toJsonTree(new JsonItem(v.getItemStack()));
+            try {
+                //1.13+ only
+                Map<Character, Object> choiceMap = (Map<Character, Object>) ShapedRecipe.class.getMethod("getChoiceMap").invoke(bukkitRecipe);
+                choiceMap.forEach((k, v) -> {
+                    JsonElement value = null;
+                    JsonArray jsonArray = new JsonArray();
+                    if(exactChoice.isAssignableFrom(v.getClass()) || materialChoice.isAssignableFrom(v.getClass())) {
+                        try {
+                            Set<Object> choices = (Set<Object>) v.getClass().getMethod("getChoices").invoke(v);
+                            for(Object o : choices) {
+                                if(o instanceof Material) jsonArray.add(AutomatedCrafting.GSON_ITEM.toJsonTree(new JsonItem((Material) o)));
+                                else jsonArray.add(AutomatedCrafting.GSON_ITEM.toJsonTree(new JsonItem((ItemStack) o)));
+                            }
+                        } catch(Exception x) {}
+                    } else if(v!=null) {//V can be null for some reason.
+                        ItemStack val = null;
+                        try {
+                            val = (ItemStack) recipeChoice.getMethod("getItemStack").invoke(v);
+                        } catch(Exception x) {}
+                        if(val!=null)
+                            value = AutomatedCrafting.GSON_ITEM.toJsonTree(new JsonItem(val));
+                    }
 
-                if(value==null) value = jsonArray;
-                key.put(k, value);
-            });
+                    if(value==null) value = jsonArray;
+                    key.put(k, value);
+                });
+            } catch(Exception x) {
+                ((ShapedRecipe) bukkitRecipe).getIngredientMap().forEach((k, v) ->
+                    key.put(k, AutomatedCrafting.GSON_ITEM.toJsonTree(new JsonItem(v)))
+                );
+            }
         } else if(bukkitRecipe instanceof ShapelessRecipe) {
             type = "crafting_shapeless";
             ingredients = new HashSet<>();
