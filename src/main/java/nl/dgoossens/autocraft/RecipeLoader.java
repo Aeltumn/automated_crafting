@@ -16,10 +16,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.net.URI;
 import java.net.URL;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -27,6 +24,7 @@ public class RecipeLoader {
     private final AutomatedCrafting instance;
     private Set<String> loadedFilenames = new HashSet<>();
     private Set<Recipe> loadedRecipes = new HashSet<>();
+    private FileSystem fileSystem;
 
     public RecipeLoader(final AutomatedCrafting inst) {
         instance=inst;
@@ -111,8 +109,11 @@ public class RecipeLoader {
         if(MinecraftVersion.get()==MinecraftVersion.TWELVE) {
             //Fallback loading from assets in 1.12
             try {
-                URI uri = Bukkit.class.getResource("/assets/.mcassetsroot").toURI();
-                Path path = FileSystems.newFileSystem(uri, Collections.emptyMap()).getPath("/assets/minecraft/recipes");
+                if(fileSystem==null) {
+                    URI uri = Bukkit.class.getResource("/assets/.mcassetsroot").toURI();
+                    fileSystem = FileSystems.newFileSystem(uri, Collections.emptyMap());
+                }
+                Path path = fileSystem.getPath("/assets/minecraft/recipes");
                 searchFolder(path);
             } catch(Exception x) { x.printStackTrace(); }
         } else if(MinecraftVersion.get().atLeast(MinecraftVersion.THIRTEEN)) {
