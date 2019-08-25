@@ -115,20 +115,28 @@ public class RecipeLoader {
                 Path path = FileSystems.newFileSystem(uri, Collections.emptyMap()).getPath("/assets/minecraft/recipes");
                 searchFolder(path);
             } catch(Exception x) { x.printStackTrace(); }
+        } else if(MinecraftVersion.get().atLeast(MinecraftVersion.THIRTEEN)) {
+            //Load from datapacks
+            //TODO Add loading from datapacks.
+            // Currently everything is functional but we really need to do custom loading because it'll be much better. Why you ask?
+            // Bukkit recipe loading is AWFUL. They parse the shaped patterns to make a chest from ### # # ### to abc d e fgh and then
+            // define the keys 8 times and each key (which is normally the #minecraft:planks tag) is parsed into all contents of the tag
+            // so the entire thing is 8 times a list of six entries with all plank types.
         }
 
+
         //Load recipes from bukkit, skip any that we already know.
-        //In 1.14 we only load them from bukkit because bukkit decided to allow us to fetch the alternate recipe choices finally.
+        //In 1.14 we backup load them from bukkit because bukkit decided to allow us to fetch the alternate recipe choices finally. (but tags are handled awfully)
         Iterator<org.bukkit.inventory.Recipe> it = Bukkit.recipeIterator();
         while(it.hasNext()) {
             org.bukkit.inventory.Recipe bukkitRecipe = it.next();
             if(bukkitRecipe instanceof Keyed) {
                 if(!loadedFilenames.contains(((Keyed) bukkitRecipe).getKey().getKey()+".json")) {
                     //Have we already loaded it?
-                    //System.out.println("[DEBUG] Backup loaded "+((Keyed) bukkitRecipe).getKey().getKey()+".json");
                     Recipe r = new Recipe(bukkitRecipe);
                     if(!r.getType().equalsIgnoreCase("crafting_shaped") &&
                             !r.getType().equalsIgnoreCase("crafting_shapeless")) continue; //We don't want the others!
+
                     loadedFilenames.add(((Keyed) bukkitRecipe).getKey().getKey()+".json");
                     loadedRecipes.add(r);
                 }

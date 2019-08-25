@@ -36,8 +36,8 @@ public class CreationListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onDispense(final InventoryMoveItemEvent e) {
-        if(e.getSource().getHolder() instanceof Dispenser) {
-            Block dropper = ((Dispenser) e.getSource().getHolder()).getBlock();
+        if(e.getSource().getHolder() instanceof Dropper) {
+            Block dropper = ((Dropper) e.getSource().getHolder()).getBlock();
             if(isDropper(dropper))
                 e.setCancelled(true); //Autocrafters can't drop items normally. This is to avoid dispensing ingredients when powered.
                     //This method specifically is needed because when droppers put the item directly into the neighbouring container the BlockDispenseEvent is not fired.

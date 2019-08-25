@@ -8,6 +8,7 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -22,8 +23,8 @@ public class JsonItem {
     @Expose private int count = 1; //Ignored if this is not the result.
     @Expose private short data = 0;
     @Expose private String displayName;
-    @Expose private List<String> lore = new ArrayList<>();
-    @Expose private Map<String, Integer> enchantments = new HashMap<>();
+    @Expose private List<String> lore;
+    @Expose private Map<String, Integer> enchantments;
 
     private ItemStack stackCache;
 
@@ -39,27 +40,31 @@ public class JsonItem {
                 mat = Material.getMaterial(item.substring("minecraft:".length()).toUpperCase());
             else {
                 try {
-                    mat = Material.getMaterial((int) block.getMethod("getId", block).invoke(null, block.getMethod("getByName", String.class).invoke(null, item)));
-                } catch(Exception x) { x.printStackTrace(); }
-                if(mat==null || mat==Material.AIR) {
+                    Method m = Material.class.getMethod("getMaterial", int.class);
+                    m.setAccessible(true);
                     try {
-                        mat = Material.getMaterial((int) itemClass.getMethod("getId", itemClass).invoke(null, itemClass.getMethod("b", String.class).invoke(null, item)));
+                        mat = (Material) m.invoke(null, (int) block.getMethod("getId", block).invoke(null, block.getMethod("getByName", String.class).invoke(null, item)));
                     } catch(Exception x) { x.printStackTrace(); }
-                }
+                    if(mat==null || mat==Material.AIR) {
+                        try {
+                            mat = (Material) m.invoke(null, (int) itemClass.getMethod("getId", itemClass).invoke(null, itemClass.getMethod("b", String.class).invoke(null, item)));
+                        } catch(Exception x) { x.printStackTrace(); }
+                    }
+                } catch(Exception x) { x.printStackTrace(); }
             }
             if(mat==null) {
                 stackCache = new ItemStack(Material.COBBLESTONE);
                 return stackCache;
             }
-            ItemStack its = new ItemStack(mat, count, data);
+            ItemStack its = new ItemStack(mat, Math.max(count, 1), data);
             ItemMeta meta = its.getItemMeta();
             if(displayName!=null) meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', displayName));
-            if(!lore.isEmpty()) {
+            if(lore!=null && !lore.isEmpty()) {
                 List<String> newlore = new ArrayList<>();
                 for(String s : lore) newlore.add(ChatColor.translateAlternateColorCodes('&', s));
                 meta.setLore(newlore);
             }
-            enchantments.forEach((k, v) -> {
+            if(enchantments!=null) enchantments.forEach((k, v) -> {
                 Enchantment e = Enchantment.getByName(k);
                 if(e==null) {
                     AutomatedCrafting.getInstance().getLogger().severe("Couldn't find enchantment with name "+k+"!");
@@ -74,19 +79,23 @@ public class JsonItem {
     }
 
     public JsonItem() {}
-    public JsonItem(Material m) { item = "minecraft:"+m.name().toLowerCase(); }
+    public JsonItem(Material m) {
+        item = "minecraft:"+m.name().toLowerCase();
+    }
     public JsonItem(ItemStack stack) {
         if(stack==null) return;
         item = "minecraft:"+stack.getType().name().toLowerCase();
         count = stack.getAmount();
-        data = stack.getDurability();
+        if(MinecraftVersion.get().equals(MinecraftVersion.TWELVE)) data = stack.getData().getData(); //We don't do damage values in 1.13+ because they are completely broken.
         if(stack.hasItemMeta()) {
             ItemMeta meta = stack.getItemMeta();
             if(meta==null) return;
             if(meta.hasDisplayName()) displayName = meta.getDisplayName();
             if(meta.hasLore()) lore = meta.getLore();
-            if(meta.hasEnchants())
+            if(meta.hasEnchants()) {
+                enchantments = new HashMap<>();
                 meta.getEnchants().forEach((k, v) -> enchantments.put(k.getName(), v));
+            }
         }
     }
     @Override

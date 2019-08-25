@@ -62,6 +62,7 @@ public class MainDropperTick extends BukkitRunnable {
                 for(JsonElement ite : ingredients) {
                     //JsonElement is either a JsonItem or a list of JsonItem
                     if(ite==null) continue;
+                    if(ite.isJsonArray() && ite.getAsJsonArray().size()==0) continue; //If it's empty we can ignore it. (because bukkit does this kind of weird stuff)
                     //Does this dropper have this ingredient?
                     //We ignore data values in 112 so we don't need the specific data value to get removed.
                     JsonItem found = inventoryContains(dropper.getInventory(), ite);
@@ -100,7 +101,7 @@ public class MainDropperTick extends BukkitRunnable {
                     }
                 }
                 //Drop the item if no container wants it.
-                if(loc.getWorld()!=null) loc.getWorld().dropItemNaturally(loc.clone().add(0.5, 0.25, 0.5), r.getResult().getStack());
+                if(loc.getWorld()!=null) loc.getWorld().dropItem(loc.clone().add(0.5, 0.25, 0.5), r.getResult().getStack());
                 return false; //If one recipe got completed, stop the crafting.
             }
             return false;
@@ -168,7 +169,7 @@ public class MainDropperTick extends BukkitRunnable {
                     if(item.getTag()!=null) {
                         for(Field f : tagClass.getDeclaredFields()) {
                             if(f.getType().equals(tagClass)) {
-                                if(item.getTag().equalsIgnoreCase("minecraft:"+f.getName().toLowerCase())) {
+                                if(item.getTag().equalsIgnoreCase("#minecraft:"+f.getName().toLowerCase())) {
                                     try {
                                         tag = f.get(null);
                                         break;
@@ -178,6 +179,7 @@ public class MainDropperTick extends BukkitRunnable {
                         }
                     }
                 }
+                //if(item.getTag()!=null) System.out.println("[DEBUG] Found tag: "+tag);
 
                 int amount = amounts.get(item);
                 for(int var5 = 0; var5 < var4; ++var5) {
