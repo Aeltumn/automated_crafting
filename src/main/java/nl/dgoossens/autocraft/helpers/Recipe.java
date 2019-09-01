@@ -54,8 +54,8 @@ public class Recipe {
                                 try {
                                     List<Object> choices = (List<Object>) v.getClass().getMethod("getChoices").invoke(v);
                                     for(Object o : choices) {
-                                        if(o instanceof Material) jsonArray.add(AutomatedCrafting.GSON_ITEM.toJsonTree(new JsonItem((Material) o)));
-                                        else jsonArray.add(AutomatedCrafting.GSON_ITEM.toJsonTree(new JsonItem((ItemStack) o)));
+                                        if(o instanceof Material) jsonArray.add(AutomatedCrafting.GSON.toJsonTree(new JsonItem((Material) o)));
+                                        else jsonArray.add(AutomatedCrafting.GSON.toJsonTree(new JsonItem((ItemStack) o)));
                                     }
                                 } catch(Exception x) { x.printStackTrace(); }
                             } else {
@@ -64,7 +64,7 @@ public class Recipe {
                                     val = (ItemStack) recipeChoice.getMethod("getItemStack").invoke(v);
                                 } catch(Exception x) { x.printStackTrace(); }
                                 if(val!=null)
-                                    value = AutomatedCrafting.GSON_ITEM.toJsonTree(new JsonItem(val));
+                                    value = AutomatedCrafting.GSON.toJsonTree(new JsonItem(val));
                             }
                         }
                         if(value==null) value = jsonArray;
@@ -75,12 +75,12 @@ public class Recipe {
             }
             ((ShapedRecipe) bukkitRecipe).getIngredientMap().forEach((k, v) -> {
                 if(v==null) return;
-                key.put(k, AutomatedCrafting.GSON_ITEM.toJsonTree(new JsonItem(v)));
+                key.put(k, AutomatedCrafting.GSON.toJsonTree(new JsonItem(v)));
             });
         } else if(bukkitRecipe instanceof ShapelessRecipe) {
             type = "crafting_shapeless";
             ingredients = new HashSet<>();
-            ((ShapelessRecipe) bukkitRecipe).getIngredientList().forEach(in -> ingredients.add(AutomatedCrafting.GSON_ITEM.toJsonTree(new JsonItem(in))));
+            ((ShapelessRecipe) bukkitRecipe).getIngredientList().forEach(in -> ingredients.add(AutomatedCrafting.GSON.toJsonTree(new JsonItem(in))));
         }
     }
 
@@ -92,6 +92,6 @@ public class Recipe {
 
     @Override
     public String toString() {
-        return AutomatedCrafting.GSON_ITEM.toJson(this);
+        return AutomatedCrafting.GSON.toJson(this);
     }
 }

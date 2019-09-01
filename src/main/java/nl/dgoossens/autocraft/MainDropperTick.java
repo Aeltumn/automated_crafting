@@ -151,11 +151,11 @@ public class MainDropperTick extends BukkitRunnable {
             Map<JsonItem, Integer> amounts = new HashMap<>();
             if(elements.isJsonArray()) {
                 elements.getAsJsonArray().forEach(k -> {
-                    JsonItem ji = AutomatedCrafting.GSON_ITEM.fromJson(k, JsonItem.class);
+                    JsonItem ji = AutomatedCrafting.GSON.fromJson(k, JsonItem.class);
                     if(ji.getAmount()>0) amounts.put(ji, ji.getAmount());
                 });
             } else {
-                JsonItem ji = AutomatedCrafting.GSON_ITEM.fromJson(elements, JsonItem.class);
+                JsonItem ji = AutomatedCrafting.GSON.fromJson(elements, JsonItem.class);
                 if(ji.getAmount()>0) amounts.put(ji, ji.getAmount());
             }
             if(amounts.isEmpty()) return null;

@@ -14,8 +14,6 @@ import javax.annotation.Nullable;
 
 public class AutomatedCrafting extends JavaPlugin {
     public static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
-    public static final Gson GSON_ITEM = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().disableHtmlEscaping().create();
-    public static final JsonParser JSON_PARSER = new JsonParser();
 
     /**
      * Returns the instance of this plugin, will be null if the plugin hasn't been loaded

@@ -1,6 +1,5 @@
 package nl.dgoossens.autocraft.helpers;
 
-import com.google.gson.annotations.Expose;
 import nl.dgoossens.autocraft.AutomatedCrafting;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -18,15 +17,15 @@ import java.util.Map;
  * A currently messy implementation of a json-parsable item, might get implemented in the Nucleus utilities in the future.
  */
 public class JsonItem {
-    @Expose private String item = "minecraft:cobblestone";
-    @Expose private String tag;
-    @Expose private int count = 1; //Ignored if this is not the result.
-    @Expose private short data = 0;
-    @Expose private String displayName;
-    @Expose private List<String> lore;
-    @Expose private Map<String, Integer> enchantments;
+    private String item = "minecraft:cobblestone";
+    private String tag;
+    private int count = 1; //Ignored if this is not the result.
+    private short data = 0;
+    private String displayName;
+    private List<String> lore;
+    private Map<String, Integer> enchantments;
 
-    private ItemStack stackCache;
+    private transient ItemStack stackCache;
 
     private static final Class<?> block = ReflectionHelper.getNMSClass("Block");
     private static final Class<?> itemClass = ReflectionHelper.getNMSClass("Item");
@@ -44,13 +43,13 @@ public class JsonItem {
                     m.setAccessible(true);
                     try {
                         mat = (Material) m.invoke(null, (int) block.getMethod("getId", block).invoke(null, block.getMethod("getByName", String.class).invoke(null, item)));
-                    } catch(Exception x) { x.printStackTrace(); }
+                    } catch(Exception x) {}
                     if(mat==null || mat==Material.AIR) {
                         try {
                             mat = (Material) m.invoke(null, (int) itemClass.getMethod("getId", itemClass).invoke(null, itemClass.getMethod("b", String.class).invoke(null, item)));
-                        } catch(Exception x) { x.printStackTrace(); }
+                        } catch(Exception x) {}
                     }
-                } catch(Exception x) { x.printStackTrace(); }
+                } catch(Exception x) {}
             }
             if(mat==null) {
                 stackCache = new ItemStack(Material.COBBLESTONE);
@@ -100,6 +99,6 @@ public class JsonItem {
     }
     @Override
     public String toString() {
-        return AutomatedCrafting.GSON_ITEM.toJson(this);
+        return AutomatedCrafting.GSON.toJson(this);
     }
 }
