@@ -35,6 +35,17 @@ public class Recipe {
     }
 
     public Recipe() {} //Needed for GSON, probably.
+    public Recipe(JsonItem result, String[] pattern, Map<Character, JsonElement> key) {
+        type = "crafting_shaped";
+        this.result = result;
+        this.pattern = pattern;
+        this.key = key;
+    }
+    public Recipe(JsonItem result, Set<JsonElement> ingredients) {
+        type = "crafting_shapeless";
+        this.result = result;
+        this.ingredients = ingredients;
+    }
     public Recipe(org.bukkit.inventory.Recipe bukkitRecipe) {
         result = new JsonItem(bukkitRecipe.getResult());
         if(bukkitRecipe instanceof ShapedRecipe) {

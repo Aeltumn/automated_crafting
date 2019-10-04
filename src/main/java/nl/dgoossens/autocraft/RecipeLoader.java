@@ -3,6 +3,7 @@ package nl.dgoossens.autocraft;
 import com.google.gson.JsonElement;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
+import nl.dgoossens.autocraft.compat.CustomCraftingCompat;
 import nl.dgoossens.autocraft.helpers.MinecraftVersion;
 import nl.dgoossens.autocraft.helpers.Recipe;
 import org.bukkit.Bukkit;
@@ -143,6 +144,10 @@ public class RecipeLoader {
                 }
             }
         }
+
+        //Custom compatibility
+        if(Bukkit.getPluginManager().isPluginEnabled("CustomCrafting"))
+            new CustomCraftingCompat().load(loadedRecipes);
 
         if(listener!=null) listener.sendMessage("Finished reloading "+loadedRecipes.size()+" recipes, took "+(System.currentTimeMillis()-t)+" ms...");
         instance.getLogger().info("Finished reloading "+loadedRecipes.size()+" recipes, took "+(System.currentTimeMillis()-t)+" ms...");

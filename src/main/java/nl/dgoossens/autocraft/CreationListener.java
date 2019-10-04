@@ -55,7 +55,7 @@ public class CreationListener implements Listener {
     public void onCreate(final HangingPlaceEvent e) {
         Block dropper = e.getEntity().getLocation().getBlock().getRelative(e.getEntity().getAttachedFace());
         if(dropper.getState() instanceof Dropper)
-            instance.getDropperRegistry().create(dropper.getLocation(), null);
+            instance.getDropperRegistry().create(dropper.getLocation(), e.getPlayer(), null);
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -106,7 +106,7 @@ public class CreationListener implements Listener {
                         //The dropper is named autocrafter is it has an item frame AND there's an item in the item frame. If the item frame is empty the name should be Dropper.
                         d.setCustomName("Autocrafter"); //Rename it to autocrafter to make this clear to the player.
                         d.update();
-                        instance.getDropperRegistry().create(d.getLocation(), item);
+                        instance.getDropperRegistry().create(d.getLocation(), e.getPlayer(), item);
                         instance.getDropperRegistry().checkDropper(d.getLocation(), e.getPlayer());
                     }
                 }.runTaskLater(instance, 1); //Wait a second for the item to be put into the frame.

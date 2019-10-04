@@ -9,6 +9,8 @@ import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
 import nl.dgoossens.autocraft.events.AutoPreCraftItemEvent;
+import nl.dgoossens.autocraft.events.AutocrafterCreateEvent;
+import nl.dgoossens.autocraft.events.AutocrafterDestroyEvent;
 import nl.dgoossens.autocraft.helpers.BlockPos;
 import nl.dgoossens.autocraft.helpers.Recipe;
 import nl.dgoossens.autocraft.helpers.SerializedItem;
@@ -86,12 +88,19 @@ public class DropperRegistry {
      * Creates a new dropper at a given location with
      * a given type that the dropper crafts.
      * This will overwrite an existing dropper at the location.
+     * @return Was the creation successfull?
      */
-    public void create(final Location l, final ItemStack type) {
+    public boolean create(final Location l, final Player p, final ItemStack type) {
+        AutocrafterCreateEvent e = new AutocrafterCreateEvent(l, p, type);
+        Bukkit.getPluginManager().callEvent(e);
+        if(!p.hasPermission("automatedcrafting.makeautocrafters") || e.isCancelled()) {
+            return false;
+        }
         BlockPos el = new BlockPos(l.getBlock());
         droppers.keySet().removeIf(f -> f.equals(el));
         if(type!=null) droppers.put(el, type);
         save();
+        return true;
     }
 
     /**
@@ -100,6 +109,13 @@ public class DropperRegistry {
     public void destroy(final Location l) {
         BlockPos el = new BlockPos(l.getBlock());
         droppers.keySet().removeIf(el::equals);
+        for(BlockPos p : new HashSet<>(droppers.keySet())) {
+            if(el.equals(p)) {
+                AutocrafterDestroyEvent e = new AutocrafterDestroyEvent(l, droppers.get(p));
+                Bukkit.getPluginManager().callEvent(e);
+                droppers.remove(p);
+            }
+        }
         save();
     }
 

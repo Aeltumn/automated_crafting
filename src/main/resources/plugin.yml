@@ -6,6 +6,7 @@ load: STARTUP
 author: Daniël Goossens
 website: https://dgoossens.nl/
 loadbefore: []
+softdepend: [CustomCrafting]
 api-version: 1.13
 commands:
   reloadrecipes:
@@ -15,3 +16,6 @@ permissions:
   automatedcrafting.reload:
     default: op
     description: Allows you to use /reloadrecipes.
+  automatedcrafting.makeautocrafters:
+    default: true
+    description: Allows users to make autocrafters.

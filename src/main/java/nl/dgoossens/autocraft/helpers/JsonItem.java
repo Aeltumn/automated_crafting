@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * A currently messy implementation of a json-parsable item, might get implemented in the Nucleus utilities in the future.
+ * A (messy) implementation of a json-parsable item with 1.12 compatiblity in mind.
  */
 public class JsonItem {
     private String item = "minecraft:cobblestone";

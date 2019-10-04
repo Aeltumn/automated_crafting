@@ -10,6 +10,10 @@ import org.bukkit.inventory.ItemStack;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * An event fired after autocrafting has finished taking the ingredients from the dropper.
+ * Can still be cancelled, items will be returned! Do use {@link AutoPreCraftItemEvent} if you don't need to know the ingredients, it's less resource intensive.
+ */
 public class AutoPostCraftItemEvent extends Event implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private boolean cancelled;
