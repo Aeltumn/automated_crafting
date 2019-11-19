@@ -4,6 +4,7 @@ import com.google.gson.JsonElement;
 import nl.dgoossens.autocraft.events.AutoPostCraftItemEvent;
 import nl.dgoossens.autocraft.events.AutoPreCraftItemEvent;
 import nl.dgoossens.autocraft.helpers.JsonItem;
+import nl.dgoossens.autocraft.helpers.MinecraftVersion;
 import nl.dgoossens.autocraft.helpers.Recipe;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -50,7 +51,7 @@ public class MainDropperTick extends BukkitRunnable {
             if(recipes==null) return false;
             for(Recipe r : recipes) {
                 if(r==null) continue; //Continue to the next recipe.
-                final List<JsonElement> ingredients = rl.getIngredients(r);
+                final List<ItemStack> ingredients = rl.getIngredients(r);
                 if(ingredients==null) continue; //Continue to the next recipe.
 
                 AutoPreCraftItemEvent event = new AutoPreCraftItemEvent(r, block, m);
@@ -59,13 +60,11 @@ public class MainDropperTick extends BukkitRunnable {
 
                 final Map<ItemStack, Integer> removed = new HashMap<>();
                 boolean failed = false;
-                for(JsonElement ite : ingredients) {
-                    //JsonElement is either a JsonItem or a list of JsonItem
+                for(ItemStack ite : ingredients) {
                     if(ite==null) continue;
-                    if(ite.isJsonArray() && ite.getAsJsonArray().size()==0) continue; //If it's empty we can ignore it. (because bukkit does this kind of weird stuff)
                     //Does this dropper have this ingredient?
                     //We ignore data values in 112 so we don't need the specific data value to get removed.
-                    JsonItem found = inventoryContains(dropper.getInventory(), ite);
+                    ItemStack found = inventoryContains(dropper.getInventory(), ite);
                     if(found==null) {
                         //If we don't have the
                         removed.forEach((k, v) -> repopulate(dropper.getInventory(), k, v));
@@ -74,12 +73,12 @@ public class MainDropperTick extends BukkitRunnable {
                     }
 
                     //If we've got the ingredient we remove it and remember we've removed it.
-                    int s = found.getStack().getAmount();
-                    if(removed.containsKey(found.getStack())) s += removed.get(found.getStack());
-                    removed.put(found.getStack(), s); //If we have to revert this we need to give back ite.getAmount() because we already repopulate the rest.
+                    int s = found.getAmount();
+                    if(removed.containsKey(found)) s += removed.get(found);
+                    removed.put(found, s); //If we have to revert this we need to give back ite.getAmount() because we already repopulate the rest.
 
                     //Set the total to be minus the amount we want. The function will automatically add the current amount to this.
-                    repopulate(dropper.getInventory(), found.getStack(), -found.getStack().getAmount());
+                    repopulate(dropper.getInventory(), found, -found.getAmount());
                 }
                 if(failed) continue; //Try the next recipe!
                 AutoPostCraftItemEvent postEvent = new AutoPostCraftItemEvent(r, removed, block, m);
@@ -95,13 +94,13 @@ public class MainDropperTick extends BukkitRunnable {
                 final Location loc = dropper.getLocation().getBlock().getRelative(dispenser.getFacing()).getLocation();
                 if(loc.getBlock().getState() instanceof InventoryHolder) {
                     InventoryHolder c = (InventoryHolder) loc.getBlock().getState();
-                    if(c.getInventory().firstEmpty() != -1 || Stream.of(c.getInventory().getContents()).anyMatch(f -> r.getResult().getStack().isSimilar(f) && f.getAmount() <= f.getMaxStackSize()-r.getResult().getStack().getAmount())) {
-                        c.getInventory().addItem(r.getResult().getStack());
+                    if(c.getInventory().firstEmpty() != -1 || Stream.of(c.getInventory().getContents()).anyMatch(f -> r.getResult().isSimilar(f) && f.getAmount() <= f.getMaxStackSize()-r.getResult().getAmount())) {
+                        c.getInventory().addItem(r.getResult());
                         return false; //If one recipe got completed, stop the crafting.
                     }
                 }
                 //Drop the item if no container wants it.
-                if(loc.getWorld()!=null) loc.getWorld().dropItem(loc.clone().add(0.5, 0.25, 0.5), r.getResult().getStack());
+                if(loc.getWorld()!=null) loc.getWorld().dropItem(loc.clone().add(0.5, 0.25, 0.5), r.getResult());
                 return false; //If one recipe got completed, stop the crafting.
             }
             return false;
@@ -145,31 +144,24 @@ public class MainDropperTick extends BukkitRunnable {
      * by the json element. Will return the json item that was
      * found.
      */
-    private JsonItem inventoryContains(final Inventory inv, final JsonElement elements) {
-        if(elements == null) return null;
+    private ItemStack inventoryContains(final Inventory inv, final ItemStack ji) {
+        if(ji == null) return null;
         else {
-            Map<JsonItem, Integer> amounts = new HashMap<>();
-            if(elements.isJsonArray()) {
-                elements.getAsJsonArray().forEach(k -> {
-                    JsonItem ji = AutomatedCrafting.GSON.fromJson(k, JsonItem.class);
-                    if(ji.getAmount()>0) amounts.put(ji, ji.getAmount());
-                });
-            } else {
-                JsonItem ji = AutomatedCrafting.GSON.fromJson(elements, JsonItem.class);
-                if(ji.getAmount()>0) amounts.put(ji, ji.getAmount());
-            }
+            Map<ItemStack, Integer> amounts = new HashMap<>();
+            if(ji.getAmount()>0) amounts.put(ji, ji.getAmount());
             if(amounts.isEmpty()) return null;
 
             ItemStack[] var3;
             int var4 = (var3 = inv.getStorageContents()).length;
 
-            for(JsonItem item : amounts.keySet()) {
+            for(ItemStack it : amounts.keySet()) {
                 Object tag = null;
-                if(tagClass!=null) {
-                    if(item.getTag()!=null) {
+                if(MinecraftVersion.get().atLeast(MinecraftVersion.THIRTEEN) && tagClass!=null) {
+                    JsonItem jsonItem = new JsonItem(it);
+                    if(jsonItem.getTag()!=null) {
                         for(Field f : tagClass.getDeclaredFields()) {
                             if(f.getType().equals(tagClass)) {
-                                if(item.getTag().equalsIgnoreCase("#minecraft:"+f.getName().toLowerCase())) {
+                                if(jsonItem.getTag().equalsIgnoreCase("#minecraft:"+f.getName().toLowerCase())) {
                                     try {
                                         tag = f.get(null);
                                         break;
@@ -181,17 +173,17 @@ public class MainDropperTick extends BukkitRunnable {
                 }
                 //if(item.getTag()!=null) System.out.println("[DEBUG] Found tag: "+tag);
 
-                int amount = amounts.get(item);
+                int amount = amounts.get(it);
                 for(int var5 = 0; var5 < var4; ++var5) {
                     ItemStack i = var3[var5];
                     boolean tagSuccess = false;
                     try {
                         tagSuccess = tag!=null && (boolean) tagMethod.invoke(tag, i.getType());
                     } catch(Exception x) { x.printStackTrace(); }
-                    if(tagSuccess || item.getStack().isSimilar(i)) { //This is equals() in the normal method, we need isSimilar because we don't care about amount.
+                    if(tagSuccess || it.isSimilar(i)) { //This is equals() in the normal method, we need isSimilar because we don't care about amount.
                         amount -= i.getAmount(); //More logical usage of the amount for our implementation.
                         if(amount <= 0) {
-                            return item;
+                            return it;
                         }
                     }
                 }

@@ -14,13 +14,16 @@ import java.util.*;
 public class Recipe {
     @Expose private String type = ""; //crafting_shaped, crafting_shapeless or we don't care
     @Expose private JsonItem result;
+    private ItemStack itemResult;
 
     //Shaped Recipes
     @Expose private String[] pattern;
     @Expose private Map<Character, JsonElement> key; //JsonElement is either array of JsonItem or JsonItem
+    private Map<Character, Set<ItemStack>> itemKey;
 
     //Shapeless Recipes
     @Expose private Set<JsonElement> ingredients;
+    private Set<ItemStack> itemIngredients;
 
     //A few NMS classes we use because 1.12 is outdated and doesn't support cool recipes yet.
     private static final Class<?> recipeChoice = getClass("org.bukkit.inventory.RecipeChoice").orElse(null);
@@ -35,38 +38,37 @@ public class Recipe {
     }
 
     public Recipe() {} //Needed for GSON, probably.
-    public Recipe(JsonItem result, String[] pattern, Map<Character, JsonElement> key) {
+    public Recipe(ItemStack result, String[] pattern, Map<Character, Set<ItemStack>> key) {
         type = "crafting_shaped";
-        this.result = result;
+        this.itemResult = result;
         this.pattern = pattern;
-        this.key = key;
+        this.itemKey = key;
     }
-    public Recipe(JsonItem result, Set<JsonElement> ingredients) {
+    public Recipe(ItemStack result, Set<ItemStack> ingredients) {
         type = "crafting_shapeless";
-        this.result = result;
-        this.ingredients = ingredients;
+        this.itemResult = result;
+        this.itemIngredients = ingredients;
     }
     public Recipe(org.bukkit.inventory.Recipe bukkitRecipe) {
-        result = new JsonItem(bukkitRecipe.getResult());
+        itemResult = bukkitRecipe.getResult();
         if(bukkitRecipe instanceof ShapedRecipe) {
             type = "crafting_shaped";
             pattern = ((ShapedRecipe) bukkitRecipe).getShape();
-            key = new HashMap<>();
             //This system of using spigot's choicemap system doesn't work at the moment. It's the backup system anyways.
             if(MinecraftVersion.get().atLeast(MinecraftVersion.THIRTEEN) && exactChoice!=null) {
                 try {
+                    itemKey = new HashMap<>();
                     //This uses a Draft API so this is the backup system! We prefer loading it ourselves.
                     Map<Character, Object> choiceMap = (Map<Character, Object>) ShapedRecipe.class.getMethod("getChoiceMap").invoke(bukkitRecipe);
                     choiceMap.forEach((k, v) -> {
-                        JsonElement value = null;
-                        JsonArray jsonArray = new JsonArray();
+                        HashSet<ItemStack> values = new HashSet<>();
                         if(v!=null) { //V can be null for some reason.
                             if(exactChoice.isAssignableFrom(v.getClass()) || materialChoice.isAssignableFrom(v.getClass())) {
                                 try {
                                     List<Object> choices = (List<Object>) v.getClass().getMethod("getChoices").invoke(v);
                                     for(Object o : choices) {
-                                        if(o instanceof Material) jsonArray.add(AutomatedCrafting.GSON.toJsonTree(new JsonItem((Material) o)));
-                                        else jsonArray.add(AutomatedCrafting.GSON.toJsonTree(new JsonItem((ItemStack) o)));
+                                        if(o instanceof Material) values.add(new ItemStack((Material) o));
+                                        else values.add((ItemStack) o);
                                     }
                                 } catch(Exception x) { x.printStackTrace(); }
                             } else {
@@ -74,32 +76,54 @@ public class Recipe {
                                 try {
                                     val = (ItemStack) recipeChoice.getMethod("getItemStack").invoke(v);
                                 } catch(Exception x) { x.printStackTrace(); }
-                                if(val!=null)
-                                    value = AutomatedCrafting.GSON.toJsonTree(new JsonItem(val));
+                                if(val!=null) values.add(val);
                             }
                         }
-                        if(value==null) value = jsonArray;
-                        key.put(k, value);
+                        itemKey.put(k, values);
                     });
                     return;
                 } catch(Exception x) { x.printStackTrace(); }
             }
+            itemKey = new HashMap<>();
             ((ShapedRecipe) bukkitRecipe).getIngredientMap().forEach((k, v) -> {
                 if(v==null) return;
-                key.put(k, AutomatedCrafting.GSON.toJsonTree(new JsonItem(v)));
+                itemKey.put(k, new HashSet<>(Arrays.asList(v)));
             });
         } else if(bukkitRecipe instanceof ShapelessRecipe) {
             type = "crafting_shapeless";
-            ingredients = new HashSet<>();
-            ((ShapelessRecipe) bukkitRecipe).getIngredientList().forEach(in -> ingredients.add(AutomatedCrafting.GSON.toJsonTree(new JsonItem(in))));
+            itemIngredients = new HashSet<>(((ShapelessRecipe) bukkitRecipe).getIngredientList());
+            //((ShapelessRecipe) bukkitRecipe).getIngredientList().forEach(in -> ingredients.add(AutomatedCrafting.GSON.toJsonTree(new JsonItem(in))));
         }
     }
 
     public String getType() { return type.startsWith("minecraft:") ? type.substring("minecraft:".length()) : type; }
-    public JsonItem getResult() { return result; }
+    public ItemStack getResult() { return itemResult != null ? itemResult : result.getStack(); }
     public String[] getPattern() { return pattern; }
-    public Map<Character, JsonElement> getKeys() { return key; }
-    public Set<JsonElement> getIngredients() { return ingredients; }
+    public Map<Character, Set<ItemStack>> getKeys() {
+        if(itemKey != null) return itemKey;
+        Map<Character, Set<ItemStack>> ret = new HashMap<>();
+        key.keySet().forEach(c -> {
+            HashSet<ItemStack> val = new HashSet<>();
+            JsonElement i = key.get(c);
+            if(i.isJsonArray())
+                ((JsonArray) i).forEach(e -> val.add(AutomatedCrafting.GSON.fromJson(e, JsonItem.class).getStack()));
+            else
+                val.add(AutomatedCrafting.GSON.fromJson(i, JsonItem.class).getStack());
+            ret.put(c, val);
+        });
+        return ret;
+    }
+    public Set<ItemStack> getIngredients() {
+        if(itemIngredients != null) return itemIngredients;
+        Set<ItemStack> ret = new HashSet<>();
+        ingredients.forEach(i -> {
+            if(i.isJsonArray())
+                ((JsonArray) i).forEach(e -> ret.add(AutomatedCrafting.GSON.fromJson(e, JsonItem.class).getStack()));
+            else
+                ret.add(AutomatedCrafting.GSON.fromJson(i, JsonItem.class).getStack());
+        });
+        return ret;
+    }
 
     @Override
     public String toString() {

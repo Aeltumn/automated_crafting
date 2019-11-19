@@ -57,7 +57,7 @@ public class RecipeLoader {
      */
     public Set<Recipe> getRecipesFor(final ItemStack item) {
         return loadedRecipes.parallelStream()
-                .filter(f -> f.getResult().getStack().isSimilar(item))
+                .filter(f -> f.getResult().isSimilar(item))
                 .collect(Collectors.toSet());
     }
 
@@ -67,13 +67,13 @@ public class RecipeLoader {
      *   - A JsonItem (use AutomatedCrafting.GSON_ITEM.fromJson(jsonElement, JsonItem.class)) to get it.
      *   - A JsonArray of JsonItem's (forEach() through the list and then use AutomatedCrafting.GSON_ITEM.fromJson(jsonElement, JsonItem.class)) on each element)
      */
-    public List<JsonElement> getIngredients(final Recipe recipe) {
+    public List<ItemStack> getIngredients(final Recipe recipe) {
         if(recipe==null) return new ArrayList<>();
-        List<JsonElement> ret = new ArrayList<>();
+        List<ItemStack> ret = new ArrayList<>();
         if(recipe.getType().equalsIgnoreCase("crafting_shaped")) {
             for(String s : recipe.getPattern()) {
                 for(char c : s.toCharArray())
-                    ret.add(recipe.getKeys().get(c));
+                    ret.addAll(recipe.getKeys().get(c));
             }
         } else if(recipe.getType().equalsIgnoreCase("crafting_shapeless"))
             ret.addAll(recipe.getIngredients());
