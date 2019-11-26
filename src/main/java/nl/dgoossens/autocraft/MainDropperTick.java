@@ -148,7 +148,7 @@ public class MainDropperTick extends BukkitRunnable {
         if(ji == null) return null;
         else {
             Map<ItemStack, Integer> amounts = new HashMap<>();
-            if(ji.getAmount()>0) amounts.put(ji, ji.getAmount());
+            if(ji.getAmount() > 0) amounts.put(ji, ji.getAmount());
             if(amounts.isEmpty()) return null;
 
             ItemStack[] var3;
@@ -156,7 +156,8 @@ public class MainDropperTick extends BukkitRunnable {
 
             for(ItemStack it : amounts.keySet()) {
                 Object tag = null;
-                if(MinecraftVersion.get().atLeast(MinecraftVersion.THIRTEEN) && tagClass!=null) {
+                //We're gonna scrap this tag stuff for now until we no longer just straight up use ItemStacks (for which tags are not useful)
+                /*if(MinecraftVersion.get().atLeast(MinecraftVersion.THIRTEEN) && tagClass!=null) {
                     JsonItem jsonItem = new JsonItem(it);
                     if(jsonItem.getTag()!=null) {
                         for(Field f : tagClass.getDeclaredFields()) {
@@ -170,7 +171,7 @@ public class MainDropperTick extends BukkitRunnable {
                             }
                         }
                     }
-                }
+                }*/
                 //if(item.getTag()!=null) System.out.println("[DEBUG] Found tag: "+tag);
 
                 int amount = amounts.get(it);
@@ -200,7 +201,7 @@ public class MainDropperTick extends BukkitRunnable {
         ItemStack[] items = inv.getStorageContents();
 
         for(int i = 0; i < items.length; ++i) {
-            if (items[i] != null && items[i].isSimilar(base)) //We don't care about the amount, so we need isSimilar not equals.
+            if (items[i] != null && base.isSimilar(items[i])) //We don't care about the amount, so we need isSimilar not equals.
                 inv.clear(i);
         }
     }
