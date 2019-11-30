@@ -73,7 +73,8 @@ public class RecipeLoader {
         if(recipe.getType().equalsIgnoreCase("crafting_shaped")) {
             for(String s : recipe.getPattern()) {
                 for(char c : s.toCharArray())
-                    ret.addAll(recipe.getKeys().get(c));
+                    if(recipe.getKeys().containsKey(c))
+                        ret.addAll(recipe.getKeys().get(c));
             }
         } else if(recipe.getType().equalsIgnoreCase("crafting_shapeless"))
             ret.addAll(recipe.getIngredients());
