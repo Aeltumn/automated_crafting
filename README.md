@@ -1,9 +1,9 @@
 # Automated Crafting
-An open-source plugin for spigot which adds powerful autocrafters capable of automatically crafting anything.
+An open-source plugin for Spigot [1.12-1.15] and Sponge [1.12] which adds powerful autocrafters capable of automatically crafting anything. With a configuration to allow further customisation like increasing the difficulty of obtaining the autocrafters.
 
 <br/>
 
-**How to use**
+**How to use (when using default configuration settings)**
 
 1) Place a dropper in the world.
 
