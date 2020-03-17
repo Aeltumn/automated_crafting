@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 
 /**
  * Compatibility with:
- * CustomCrafting by WolfyScript
+ * CustomCrafting v1.4 and older by WolfyScript
  */
 public class CustomCraftingCompat implements CompatClass {
     public void load(final Set<Recipe> loadedRecipes) {

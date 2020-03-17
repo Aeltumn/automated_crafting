@@ -82,17 +82,7 @@ public class RecipeLoader {
     }
 
     /**
-     * Reloads all recipes, in 1.12 the recipes are read from within the jar
-     * from the assets folder.
-     * All recipes are always loaded from the /recipes/ folder in the plugin data.
-     * Lastly, the bukkit recipe iterator is checked and any unknown recipes
-     * from that list (based on filename/key) are also loaded.
-     *
-     * In 1.14 all recipes are loaded from the bukkit recipe iterator as it is possible
-     * to fetch the data when multiple ingredients are allowed from bukkit recipes in 1.14.
-     *
-     * (haven't actually checked if this works properly in 1.13, but if it doesn't it won't get fixed
-     * because I'm not making a custom datapack loader)
+     * Reloads all recipes from the minecraft jar and otherwise from bukkit.
      */
     protected void reload(final CommandSender listener) {
         if(listener!=null) listener.sendMessage("Reloading recipes...");
@@ -101,32 +91,17 @@ public class RecipeLoader {
         loadedFilenames.clear();
 
         long t = System.currentTimeMillis();
-        //Load our custom recipes first to allow the to overwrite!
-        File recipeFolder = new File(instance.getDataFolder(), "recipes");
-        recipeFolder.mkdirs(); //Create folders  if they don't exist yet.
+        //Load from Minecraft's assets
         try {
-            searchFolder(recipeFolder.toPath());
-        } catch(Exception x) { x.printStackTrace(); }
-
-        if(MinecraftVersion.get()==MinecraftVersion.TWELVE) {
-            //Fallback loading from assets in 1.12
-            try {
-                if(fileSystem==null) {
-                    URI uri = Bukkit.class.getResource("/assets/.mcassetsroot").toURI();
-                    fileSystem = FileSystems.newFileSystem(uri, Collections.emptyMap());
-                }
-                Path path = fileSystem.getPath("/assets/minecraft/recipes");
-                searchFolder(path);
-            } catch(Exception x) { x.printStackTrace(); }
-        } else if(MinecraftVersion.get().atLeast(MinecraftVersion.THIRTEEN)) {
-            //Load from datapacks
-            //TODO Add loading from datapacks.
-            // Currently everything is functional but we really need to do custom loading because it'll be much better. Why you ask?
-            // Bukkit recipe loading is AWFUL. They parse the shaped patterns to make a chest from ### # # ### to abc d e fgh and then
-            // define the keys 8 times and each key (which is normally the #minecraft:planks tag) is parsed into all contents of the tag
-            // so the entire thing is 8 times a list of six entries with all plank types.
+            if(fileSystem == null) {
+                URI uri = Bukkit.class.getResource("/assets/.mcassetsroot").toURI();
+                fileSystem = FileSystems.newFileSystem(uri, Collections.emptyMap());
+            }
+            Path path = fileSystem.getPath("/"+(MinecraftVersion.get().atLeast(MinecraftVersion.THIRTEEN) ? "data" : "assets")+"/minecraft/recipes");
+            searchFolder(path);
+        } catch(Exception x) {
+            x.printStackTrace();
         }
-
 
         //Load recipes from bukkit, skip any that we already know.
         //In 1.14 we backup load them from bukkit because bukkit decided to allow us to fetch the alternate recipe choices finally. (but tags are handled awfully)

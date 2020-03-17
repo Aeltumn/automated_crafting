@@ -24,7 +24,7 @@ public class BlockPos {
      * block position.
      */
     public Location getLocation() {
-        if(Bukkit.getWorld(world)==null) return null;
+        if(Bukkit.getWorld(world) == null) return null;
         return new Location(Bukkit.getWorld(world), x, y, z);
     }
 

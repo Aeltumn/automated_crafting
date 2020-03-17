@@ -1,15 +1,11 @@
 package nl.dgoossens.autocraft.events;
 
-import nl.dgoossens.autocraft.helpers.Recipe;
 import org.bukkit.Location;
-import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
-
-import java.util.Map;
 
 /**
  * An event called whenever a player attempts to create an autocrafter.

@@ -42,7 +42,9 @@ public class MainDropperTick extends BukkitRunnable {
     public void run() {
         int i = dr.droppers.size();
         dr.droppers.keySet().removeIf(d -> {
-            final Block block = d.getLocation().getBlock();
+            final Location l = d.getLocation();
+            if(l == null) return false;
+            final Block block = l.getBlock();
             if(block.getType() != Material.DROPPER) return true;
             final ItemStack m = dr.droppers.get(d);
             final Dropper dropper = (Dropper) block.getState();
@@ -63,7 +65,7 @@ public class MainDropperTick extends BukkitRunnable {
                 for(ItemStack ite : ingredients) {
                     if(ite==null) continue;
                     //Does this dropper have this ingredient?
-                    //We ignore data values in 112 so we don't need the specific data value to get removed.
+                    //We ignore data values in 1.12 so we don't need the specific data value to get removed.
                     ItemStack found = inventoryContains(dropper.getInventory(), ite);
                     if(found==null) {
                         //If we don't have the

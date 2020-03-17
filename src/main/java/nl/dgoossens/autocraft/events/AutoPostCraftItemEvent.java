@@ -8,7 +8,6 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.Map;
-import java.util.Set;
 
 /**
  * An event fired after autocrafting has finished taking the ingredients from the dropper.
