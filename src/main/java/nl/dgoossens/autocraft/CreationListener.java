@@ -3,7 +3,6 @@ package nl.dgoossens.autocraft;
 import nl.dgoossens.autocraft.helpers.BlockPos;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.block.Dispenser;
 import org.bukkit.block.Dropper;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;

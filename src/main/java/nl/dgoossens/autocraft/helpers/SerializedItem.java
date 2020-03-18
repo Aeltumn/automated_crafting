@@ -45,10 +45,13 @@ public final class SerializedItem implements Serializable {
             Object tag = mojangsonParser.getMethod("parse", String.class).invoke(null, nbt);
             Object nullObject = null;
             Object nmsStack = craftItemStack.getMethod("asNMSCopy", ItemStack.class).invoke(null, ret);
-            if (!tag.toString().equalsIgnoreCase("{}")) nmsStack.getClass().getMethod("setTag", nbtTagCompound).invoke(nmsStack, tag);
+            if (!tag.toString().equalsIgnoreCase("{}"))
+                nmsStack.getClass().getMethod("setTag", nbtTagCompound).invoke(nmsStack, tag);
             else nmsStack.getClass().getMethod("setTag", nbtTagCompound).invoke(nmsStack, nullObject);
             ret = (ItemStack) craftItemStack.getMethod("asCraftMirror", itemStack).invoke(null, nmsStack);
-        } catch (Exception x) { x.printStackTrace(); }
+        } catch (Exception x) {
+            x.printStackTrace();
+        }
         return ret;
     }
 
@@ -65,8 +68,11 @@ public final class SerializedItem implements Serializable {
         try {
             Object nmsStack = craftItemStack.getMethod("asNMSCopy", ItemStack.class).invoke(null, item);
             Object tag = nbtTagCompound.newInstance();
-            if ((boolean) nmsStack.getClass().getMethod("hasTag").invoke(nmsStack)) tag = nmsStack.getClass().getMethod("getTag").invoke(nmsStack);
+            if ((boolean) nmsStack.getClass().getMethod("hasTag").invoke(nmsStack))
+                tag = nmsStack.getClass().getMethod("getTag").invoke(nmsStack);
             nbt = tag.toString();
-        } catch (Exception x) { x.printStackTrace(); }
+        } catch (Exception x) {
+            x.printStackTrace();
+        }
     }
 }

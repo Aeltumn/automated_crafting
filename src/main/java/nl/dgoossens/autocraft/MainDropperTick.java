@@ -1,11 +1,6 @@
 package nl.dgoossens.autocraft;
 
-import com.google.gson.JsonElement;
-import nl.dgoossens.autocraft.events.AutoPostCraftItemEvent;
-import nl.dgoossens.autocraft.events.AutoPreCraftItemEvent;
-import nl.dgoossens.autocraft.helpers.JsonItem;
-import nl.dgoossens.autocraft.helpers.MinecraftVersion;
-import nl.dgoossens.autocraft.helpers.Recipe;
+import nl.dgoossens.autocraft.helpers.BukkitRecipe;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -17,7 +12,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.Dispenser;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.stream.Stream;
@@ -49,9 +43,9 @@ public class MainDropperTick extends BukkitRunnable {
             final ItemStack m = dr.droppers.get(d);
             final Dropper dropper = (Dropper) block.getState();
             if(m==null || dropper.isLocked() || block.getBlockPower()>0) return false;
-            final Set<Recipe> recipes = rl.getRecipesFor(m);
+            final Set<BukkitRecipe> recipes = rl.getRecipesFor(m);
             if(recipes==null) return false;
-            for(Recipe r : recipes) {
+            for(BukkitRecipe r : recipes) {
                 if(r==null) continue; //Continue to the next recipe.
                 final List<ItemStack> ingredients = rl.getIngredients(r);
                 if(ingredients==null) continue; //Continue to the next recipe.

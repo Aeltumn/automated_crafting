@@ -8,11 +8,10 @@ import com.google.gson.stream.JsonWriter;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
-import nl.dgoossens.autocraft.events.AutoPreCraftItemEvent;
 import nl.dgoossens.autocraft.events.AutocrafterCreateEvent;
 import nl.dgoossens.autocraft.events.AutocrafterDestroyEvent;
 import nl.dgoossens.autocraft.helpers.BlockPos;
-import nl.dgoossens.autocraft.helpers.Recipe;
+import nl.dgoossens.autocraft.helpers.BukkitRecipe;
 import nl.dgoossens.autocraft.helpers.SerializedItem;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -46,7 +45,7 @@ public class DropperRegistry {
             else player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText("&7Autocrafter has redstone signal blocking it"));
             return;
         }
-        final Set<Recipe> recipes = recipeLoader.getRecipesFor(m);
+        final Set<BukkitRecipe> recipes = recipeLoader.getRecipesFor(m);
         if(recipes==null || recipes.size()==0) {
             player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText("&7Autocrafter can't craft this item"));
             return;
