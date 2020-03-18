@@ -36,28 +36,29 @@ public class DropperRegistry extends CrafterRegistry {
     }
 
     @Override
-    public void checkBlock(final Location location, final Player player) {
+    public boolean checkBlock(final Location location, final Player player) {
         final Block block = location.getBlock();
         final BlockPos pos = new BlockPos(block);
         final ItemStack m = getAutocrafterMap(location.getWorld()).entrySet().parallelStream().filter(f -> f.getKey().equals(pos)).findAny().map(Map.Entry::getValue).orElse(null);
         if ((!(block.getState() instanceof Container)))
-            return;
+            return false;
 
         final Container container = (Container) block.getState();
-        if (m == null) return;
+        if (m == null) return false;
         if (container.isLocked() || block.getBlockPower() > 0) {
-            if (container.isLocked()) player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText("&7Autocrafter is locked"));
-            else player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText("&7Autocrafter has redstone signal blocking it"));
-            return;
+            if (container.isLocked()) player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText("Autocrafter is locked"));
+            else player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText("Autocrafter has redstone signal blocking it"));
+            return true;
         }
         final Set<CraftingRecipe> recipes = recipeLoader.getRecipesFor(m);
         if (recipes == null || recipes.size() == 0) {
-            player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText("&7Autocrafter can't craft this item"));
-            return;
+            player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText("Autocrafter can't craft this item"));
+            return false;
         }
 
         //Inform the player how many recipes are being accepted right now
-        player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText("&7Autocrafter is accepting "+recipes.size()+" recipe(s)"));
+        player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText("Autocrafter is accepting "+recipes.size()+" recipe(s)"));
+        return true;
     }
 
     private BaseComponent[] getText(final String text) {
@@ -97,6 +98,8 @@ public class DropperRegistry extends CrafterRegistry {
     public void load() {
         if (!AutomatedCrafting.INSTANCE.getDataFolder().exists()) AutomatedCrafting.INSTANCE.getDataFolder().mkdirs();
         File legacyFile = new File(AutomatedCrafting.INSTANCE.getDataFolder(), "droppers.json");
+        boolean legaycLoaded = false;
+
         //Legacyload
         if(legacyFile.exists()) {
             try {
@@ -118,6 +121,7 @@ public class DropperRegistry extends CrafterRegistry {
             }
 
             legacyFile.delete(); //Remove old file
+            legaycLoaded = true;
         }
 
         //Load modern file
@@ -142,8 +146,15 @@ public class DropperRegistry extends CrafterRegistry {
                     jr.beginObject();
                     while(jr.hasNext()) {
                         String n = jr.nextName();
+                        BlockPos bp;
+                        try {
+                            bp = BlockPos.fromLong(Long.parseLong(n));
+                        } catch(NumberFormatException ignored) {
+                            jr.skipValue();
+                            break;
+                        }
                         //Update method of saving items to json
-                        m.put(BlockPos.fromLong(jr.nextLong()), AutomatedCrafting.GSON.fromJson(n, SerializedItem.class).getItem());
+                        m.put(bp, AutomatedCrafting.GSON.fromJson(jr.nextString(), SerializedItem.class).getItem());
                     }
                     jr.endObject();
                 }
@@ -154,6 +165,9 @@ public class DropperRegistry extends CrafterRegistry {
                 AutomatedCrafting.INSTANCE.warning("An error occurred whilst reading autocrafters from the configuration file. Please rebuild all autocrafters!");
             }
         }
+
+        if(legaycLoaded)
+            save();
     }
 
     @Override
@@ -162,6 +176,7 @@ public class DropperRegistry extends CrafterRegistry {
             if (!file.exists()) file.createNewFile();
             FileWriter fw = new FileWriter(file);
             JsonWriter jw = new JsonWriter(fw);
+            jw.setIndent("  ");
             jw.beginObject();
             jw.name("version");
             jw.value(VERSION);
@@ -172,8 +187,8 @@ public class DropperRegistry extends CrafterRegistry {
                 Map<BlockPos, ItemStack> m = getAutocrafterMap(s);
                 for (BlockPos d : m.keySet()) {
                     if (m.get(d) == null) continue;
-                    jw.name(new SerializedItem(m.get(d)).toString());
-                    jw.value(d.toLong());
+                    jw.name(String.valueOf(d.toLong()));
+                    jw.jsonValue(AutomatedCrafting.GSON.toJson(new SerializedItem(m.get(d))));
                 }
                 jw.endObject();
             }

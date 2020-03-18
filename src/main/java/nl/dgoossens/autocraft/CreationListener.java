@@ -84,6 +84,7 @@ public class CreationListener implements Listener {
     private void breakDropper(final Block dropper, final boolean clean) {
         if (dropper.getState() instanceof Dropper) {
             instance.getCrafterRegistry().destroy(dropper.getLocation());
+
             if (clean) { //Clean should be true when the item is removed from the item frame. (can actually be true at all times but we don't need to update droppers randomly if you're placing down item frames, could break redstone)
                 Dropper d = (Dropper) dropper.getState();
                 d.setCustomName("Dropper"); //Set the name back to the default dropper.
@@ -103,13 +104,16 @@ public class CreationListener implements Listener {
                 }
                 new BukkitRunnable() {
                     public void run() {
-                        ItemStack item = ((ItemFrame) e.getRightClicked()).getItem();
                         Dropper d = (Dropper) dropper.getState();
-                        //The dropper is named autocrafter is it has an item frame AND there's an item in the item frame. If the item frame is empty the name should be Dropper.
-                        d.setCustomName("Autocrafter"); //Rename it to autocrafter to make this clear to the player.
-                        d.update();
+                        ItemStack item = ((ItemFrame) e.getRightClicked()).getItem();
                         instance.getCrafterRegistry().create(d.getLocation(), e.getPlayer(), item);
-                        instance.getCrafterRegistry().checkBlock(d.getLocation(), e.getPlayer());
+
+                        //Only rename if we have a valid item that we can craft in there.
+                        if(instance.getCrafterRegistry().checkBlock(d.getLocation(), e.getPlayer())) {
+                            //The dropper is named autocrafter is it has an item frame AND there's an item in the item frame. If the item frame is empty the name should be Dropper.
+                            d.setCustomName("Autocrafter"); //Rename it to autocrafter to make this clear to the player.
+                            d.update();
+                        }
                     }
                 }.runTaskLater(instance, 1); //Wait a second for the item to be put into the frame.
             }

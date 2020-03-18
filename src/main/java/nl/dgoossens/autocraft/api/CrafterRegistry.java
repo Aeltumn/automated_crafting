@@ -48,7 +48,7 @@ public abstract class CrafterRegistry {
     /**
      * Checks the validity of the item in the item frame, notifies the player in chat.
      */
-    public abstract void checkBlock(final Location location, final Player player);
+    public abstract boolean checkBlock(final Location location, final Player player);
 
     /**
      * Creates a new autocrafter at a given location with
