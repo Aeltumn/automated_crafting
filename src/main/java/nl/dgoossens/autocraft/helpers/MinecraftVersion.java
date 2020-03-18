@@ -8,14 +8,6 @@ public enum MinecraftVersion {
     THIRTEEN,
     ;
 
-    /**
-     * For example:
-     * MinecraftVersion.THIRTEEN.atLeast(MinecraftVersion.TWELVE);
-     *      => true
-     *
-     * MinecraftVersion.THIRTEEN.atLeast(MinecraftVersion.FOURTEEN);
-     *      => false
-     */
     public boolean atLeast(MinecraftVersion mc) {
         return ordinal() >= mc.ordinal();
     }

@@ -116,7 +116,6 @@ public class RecipeLoader {
 
                     loadedFilenames.add(((Keyed) bukkitRecipe).getKey().getKey() + ".json");
                     loadedRecipes.add(r);
-                    System.out.println("BL: " + ((Keyed) bukkitRecipe).getKey().getKey() + ".json");
                 }
             }
         }
@@ -183,7 +182,6 @@ public class RecipeLoader {
             loadReader(reader);
             reader.close();
             loadedFilenames.add(file.getFileName().toString());
-            System.out.println("VL: " + file.getFileName().toString());
         } catch (Exception x) {
             x.printStackTrace();
 

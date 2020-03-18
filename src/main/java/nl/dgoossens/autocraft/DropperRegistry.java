@@ -8,157 +8,230 @@ import com.google.gson.stream.JsonWriter;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
+import nl.dgoossens.autocraft.api.CrafterRegistry;
+import nl.dgoossens.autocraft.api.CraftingRecipe;
 import nl.dgoossens.autocraft.events.AutocrafterCreateEvent;
 import nl.dgoossens.autocraft.events.AutocrafterDestroyEvent;
-import nl.dgoossens.autocraft.helpers.BlockPos;
-import nl.dgoossens.autocraft.helpers.BukkitRecipe;
+import nl.dgoossens.autocraft.api.BlockPos;
+import nl.dgoossens.autocraft.helpers.ReflectionHelper;
 import nl.dgoossens.autocraft.helpers.SerializedItem;
 import org.bukkit.*;
 import org.bukkit.block.Block;
-import org.bukkit.block.Dropper;
+import org.bukkit.block.Container;
+import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
-public class DropperRegistry {
-    protected ConcurrentHashMap<BlockPos, ItemStack> droppers = new ConcurrentHashMap<>();
-    private File file;
-    private final RecipeLoader recipeLoader;
+public class DropperRegistry extends CrafterRegistry {
+    public static final int VERSION = 1;
+    public DropperRegistry(JavaPlugin jp) {
+        //TODO new MainDropperTick(this, recipeLoader).runTaskTimer(jp, 27, 27);
+    }
 
-    /**
-     * Checks the validity of the item in the item frame, notifies the player in chat.
-     */
-    public void checkDropper(final Location location, final Player player) {
+    @Override
+    public void checkBlock(final Location location, final Player player) {
         final Block block = location.getBlock();
         final BlockPos pos = new BlockPos(block);
-        if(!(block.getState() instanceof Dropper)) return; //Not a dropper, no message. This is probably an edge-case or an error.
-        final ItemStack m = droppers.entrySet().parallelStream().filter(f -> f.getKey().equals(pos)).findAny().map(Map.Entry::getValue).orElse(null);
-        final Dropper dropper = (Dropper) block.getState();
-        if(m==null) return;
-        if(dropper.isLocked() || block.getBlockPower()>0) {
-            if(dropper.isLocked()) player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText("&7Autocrafter is locked"));
+        final ItemStack m = getAutocrafterMap(location.getWorld()).entrySet().parallelStream().filter(f -> f.getKey().equals(pos)).findAny().map(Map.Entry::getValue).orElse(null);
+        if ((!(block.getState() instanceof Container)))
+            return;
+
+        final Container container = (Container) block.getState();
+        if (m == null) return;
+        if (container.isLocked() || block.getBlockPower() > 0) {
+            if (container.isLocked()) player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText("&7Autocrafter is locked"));
             else player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText("&7Autocrafter has redstone signal blocking it"));
             return;
         }
-        final Set<BukkitRecipe> recipes = recipeLoader.getRecipesFor(m);
-        if(recipes==null || recipes.size()==0) {
+        final Set<CraftingRecipe> recipes = recipeLoader.getRecipesFor(m);
+        if (recipes == null || recipes.size() == 0) {
             player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText("&7Autocrafter can't craft this item"));
             return;
         }
 
-        int size = recipes.size();
-        recipes.removeIf(f -> {
-            if(f==null) return true;
-            AutoPreCraftItemEvent event = new AutoPreCraftItemEvent(f, block, m);
-            Bukkit.getPluginManager().callEvent(event);
-            return event.isCancelled();
-        });
-
-        if(recipes.size()==0) { //If all recipes are blocked we can assume this item is being blocked.
-            player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText("&7Crafting this item has been disabled"));
-            return;
-        }
-
-        //No recipes got removed
-        if(recipes.size()==size) player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText("&7Autocrafter is accepting "+recipes.size()+" recipe(s)"));
-        else player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText("&7Autocrafter is accepting "+recipes.size()+" recipe(s), "+(size-recipes.size())+" were disabled")); //also tell how many of the recipes got blocked
+        //Inform the player how many recipes are being accepted right now
+        player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText("&7Autocrafter is accepting "+recipes.size()+" recipe(s)"));
     }
 
-    /**
-     * Parses and colours a piece of text.
-     */
     private BaseComponent[] getText(final String text) {
         return TextComponent.fromLegacyText(ChatColor.translateAlternateColorCodes('&', text));
     }
 
-    public DropperRegistry(final AutomatedCrafting instance) {
-        load(instance);
-        recipeLoader = instance.getRecipeLoader();
-
-        new MainDropperTick(this, recipeLoader).runTaskTimer(instance, 27, 27);
-    }
-
-    /**
-     * Creates a new dropper at a given location with
-     * a given type that the dropper crafts.
-     * This will overwrite an existing dropper at the location.
-     * @return Was the creation successfull?
-     */
+    @Override
     public boolean create(final Location l, final Player p, final ItemStack type) {
         AutocrafterCreateEvent e = new AutocrafterCreateEvent(l, p, type);
         Bukkit.getPluginManager().callEvent(e);
         if(!p.hasPermission("automatedcrafting.makeautocrafters") || e.isCancelled()) {
             return false;
         }
-        BlockPos el = new BlockPos(l.getBlock());
-        droppers.keySet().removeIf(f -> f.equals(el));
-        if(type!=null) droppers.put(el, type);
+        BlockPos el = new BlockPos(l.getBlockX(), l.getBlockY(), l.getBlockZ());
+        getAutocrafterMap(l.getWorld()).keySet().removeIf(f -> f.equals(el));
+        if(type!=null)
+            getAutocrafterMap(l.getWorld()).put(el, type);
         save();
         return true;
     }
 
-    /**
-     * Destroys the dropper at a given location.
-     */
+    @Override
     public void destroy(final Location l) {
-        BlockPos el = new BlockPos(l.getBlock());
-        droppers.keySet().removeIf(el::equals);
-        for(BlockPos p : new HashSet<>(droppers.keySet())) {
-            if(el.equals(p)) {
-                AutocrafterDestroyEvent e = new AutocrafterDestroyEvent(l, droppers.get(p));
+        BlockPos el = new BlockPos(l.getBlockX(), l.getBlockY(), l.getBlockZ());
+        getAutocrafterMap(l.getWorld()).keySet().removeIf(el::equals);
+        for (BlockPos p : new HashSet<>(getAutocrafterMap(l.getWorld()).keySet())) {
+            if (el.equals(p)) {
+                AutocrafterDestroyEvent e = new AutocrafterDestroyEvent(l, getAutocrafterMap(l.getWorld()).get(p));
                 Bukkit.getPluginManager().callEvent(e);
-                droppers.remove(p);
+                getAutocrafterMap(l.getWorld()).remove(p);
             }
         }
         save();
     }
 
-    /**
-     * Loads all autocrafters from the saved configuration file.
-     */
-    private void load(final AutomatedCrafting instance) {
-        if(!instance.getDataFolder().exists()) instance.getDataFolder().mkdirs();
-        file = new File(instance.getDataFolder(), "droppers.json");
-        if(file.exists()) {
+    @Override
+    public void load() {
+        if (!AutomatedCrafting.INSTANCE.getDataFolder().exists()) AutomatedCrafting.INSTANCE.getDataFolder().mkdirs();
+        File legacyFile = new File(AutomatedCrafting.INSTANCE.getDataFolder(), "droppers.json");
+        //Legacyload
+        if(legacyFile.exists()) {
             try {
-                FileReader fr = new FileReader(file);
+                FileReader fr = new FileReader(legacyFile);
                 JsonReader jr = new JsonReader(fr);
-                if(!jr.hasNext()) return;
-                if(jr.peek()!=JsonToken.BEGIN_OBJECT) return;
                 jr.beginObject();
                 Gson g = new GsonBuilder().create();
-                while(jr.hasNext()) {
+                while (jr.hasNext()) {
                     String n = jr.nextName();
-                    droppers.put(g.fromJson(jr, BlockPos.class), AutomatedCrafting.GSON.fromJson(n, SerializedItem.class).getItem());
+                    LegacyBlockPos lbp = g.fromJson(jr, LegacyBlockPos.class);
+                    ItemStack it = AutomatedCrafting.GSON.fromJson(n, LegacySerializedItem.class).getItem();
+                    getAutocrafterMap(lbp.world).put(new BlockPos(lbp.x, lbp.y, lbp.z), it);
                 }
                 jr.endObject();
                 jr.close();
                 fr.close();
-            } catch(Exception x) {
-                instance.getLogger().warning("An error occurred whilst reading autocrafters from the configuration file. Please rebuild all autocrafters!");
+            } catch (Exception x) {
+                AutomatedCrafting.INSTANCE.warning("An error occurred whilst legacy loading autocrafters from an old configuration file. Please rebuild all autocrafters!");
+            }
+
+            legacyFile.delete(); //Remove old file
+        }
+
+        //Load modern file
+        if (file.exists()) {
+            try {
+                FileReader fr = new FileReader(file);
+                JsonReader jr = new JsonReader(fr);
+                if (!jr.hasNext()) return;
+                if (jr.peek() != JsonToken.BEGIN_OBJECT) return;
+                jr.beginObject();
+                String s = jr.nextName();
+                int version = jr.nextInt();
+                if(version != VERSION) {
+                    //TODO Add compatibility for older versions of configuration when new configuration versions are added!
+                    AutomatedCrafting.INSTANCE.warning("You were running an old version of AutomatedCrafting (file version "+VERSION+") and all exsisting autocrafters have been invalidated, sorry! (every autocrafter will need to be rebuilt)");
+                    return;
+                }
+                Gson g = new GsonBuilder().create();
+                while (jr.hasNext()) {
+                    String world = jr.nextName();
+                    Map<BlockPos, ItemStack> m = getAutocrafterMap(world);
+                    jr.beginObject();
+                    while(jr.hasNext()) {
+                        String n = jr.nextName();
+                        //Update method of saving items to json
+                        m.put(BlockPos.fromLong(jr.nextLong()), AutomatedCrafting.GSON.fromJson(n, SerializedItem.class).getItem());
+                    }
+                    jr.endObject();
+                }
+                jr.endObject();
+                jr.close();
+                fr.close();
+            } catch (Exception x) {
+                AutomatedCrafting.INSTANCE.warning("An error occurred whilst reading autocrafters from the configuration file. Please rebuild all autocrafters!");
             }
         }
     }
 
-    /**
-     * Saves all autocrafters to the configuration.
-     */
-    protected void save() {
+    @Override
+    public void save() {
         try {
-            if(!file.exists()) file.createNewFile();
+            if (!file.exists()) file.createNewFile();
             FileWriter fw = new FileWriter(file);
             JsonWriter jw = new JsonWriter(fw);
             jw.beginObject();
-            for(BlockPos d : droppers.keySet()) { jw.name(droppers.get(d)==null ? "null" : new SerializedItem(droppers.get(d)).toString()); jw.jsonValue(new GsonBuilder().create().toJson(d)); }
+            jw.name("version");
+            jw.value(VERSION);
+
+            for(String s : getWorldsRegistered()) {
+                jw.name(s);
+                jw.beginObject();
+                Map<BlockPos, ItemStack> m = getAutocrafterMap(s);
+                for (BlockPos d : m.keySet()) {
+                    if (m.get(d) == null) continue;
+                    jw.name(new SerializedItem(m.get(d)).toString());
+                    jw.value(d.toLong());
+                }
+                jw.endObject();
+            }
             jw.endObject();
             jw.flush();
             jw.close();
             fw.close();
         } catch(Exception x) { x.printStackTrace(); }
+    }
+
+    //Used for legacy loading of old data files.
+    public static class LegacyBlockPos {
+        private int x, y, z;
+        private String world;
+    }
+
+    //Used for legacy loading of old data files.
+    public static class LegacySerializedItem {
+        private static final Class<?> mojangsonParser = ReflectionHelper.getNMSClass("MojangsonParser");
+        private static final Class<?> craftItemStack = ReflectionHelper.getBukkitClass("inventory.CraftItemStack");
+        private static final Class<?> nbtTagCompound = ReflectionHelper.getNMSClass("NBTTagCompound");
+        private static final Class<?> itemStack = ReflectionHelper.getNMSClass("ItemStack");
+
+        private Map<String, Object> item;
+        private Map<String, Object> meta;
+        private String nbt;
+
+        public LegacySerializedItem(ItemStack item) {
+            build(item);
+        }
+
+        public ItemStack getItem() {
+            if(this.item==null) return null;
+            ItemStack ret = ItemStack.deserialize(this.item);
+            if(meta!=null) ret.setItemMeta((ItemMeta) ConfigurationSerialization.deserializeObject(meta, ConfigurationSerialization.getClassByAlias("ItemMeta")));
+            try {
+                Object tag = mojangsonParser.getMethod("parse", String.class).invoke(null, nbt);
+                Object nullObject = null;
+                Object nmsStack = craftItemStack.getMethod("asNMSCopy", ItemStack.class).invoke(null, ret);
+                if(!tag.toString().equalsIgnoreCase("{}")) nmsStack.getClass().getMethod("setTag", nbtTagCompound).invoke(nmsStack, tag);
+                else nmsStack.getClass().getMethod("setTag", nbtTagCompound).invoke(nmsStack, nullObject);
+                ret = (ItemStack) craftItemStack.getMethod("asCraftMirror", itemStack).invoke(null, nmsStack);
+            } catch(Exception x) { x.printStackTrace(); }
+            return ret;
+        }
+
+        private void build(ItemStack item) {
+            if(item==null) return;
+            if(item.hasItemMeta()) meta = item.getItemMeta().serialize();
+            ItemStack copy = item.clone();
+            copy.setItemMeta(null);
+            this.item = copy.serialize();
+            try {
+                Object nmsStack = craftItemStack.getMethod("asNMSCopy", ItemStack.class).invoke(null, item);
+                Object tag = nbtTagCompound.newInstance();
+                if((boolean) nmsStack.getClass().getMethod("hasTag").invoke(nmsStack)) tag = nmsStack.getClass().getMethod("getTag").invoke(nmsStack);
+                nbt = tag.toString();
+            } catch(Exception x) { x.printStackTrace(); }
+        }
     }
 }
