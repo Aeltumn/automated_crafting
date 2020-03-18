@@ -24,4 +24,9 @@ public class JsonRecipe implements CraftingRecipe {
         if(result == null) return false;
         return result.isSimilar(stack);
     }
+
+    @Override
+    public ItemStack getResultDrop() {
+        return result.toStack();
+    }
 }

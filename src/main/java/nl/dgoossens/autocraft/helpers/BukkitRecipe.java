@@ -111,10 +111,11 @@ public class BukkitRecipe implements CraftingRecipe {
 
     @Override
     public boolean creates(ItemStack stack) {
-        return getResult().isSimilar(stack);
+        return result.isSimilar(stack);
     }
 
-    public ItemStack getResult() {
+    @Override
+    public ItemStack getResultDrop() {
         return result;
     }
 }

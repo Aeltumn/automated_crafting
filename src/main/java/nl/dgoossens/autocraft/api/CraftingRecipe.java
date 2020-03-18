@@ -14,4 +14,9 @@ public interface CraftingRecipe {
      * NBT of input item matters!
      */
     boolean creates(ItemStack stack);
+
+    /**
+     * Get the item dropped if the crafting was successfull.
+     */
+    ItemStack getResultDrop();
 }

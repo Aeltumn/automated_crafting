@@ -2,7 +2,6 @@ package nl.dgoossens.autocraft;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonParser;
 import nl.dgoossens.autocraft.api.CrafterRegistry;
 import nl.dgoossens.autocraft.helpers.ReflectionHelper;
 import org.bukkit.Bukkit;
@@ -10,8 +9,6 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
-
-import javax.annotation.Nullable;
 
 public class AutomatedCrafting extends JavaPlugin {
     public static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
@@ -40,9 +37,13 @@ public class AutomatedCrafting extends JavaPlugin {
             return;
         }
 
+        //setup config
+        saveDefaultConfig();
+        reloadConfig();
+
         recipeLoader = new RecipeLoader(this); //The recipe loader keeps track of all the recipes the autocrafters support.
-        registry = new DropperRegistry(this); //The registry tracks all autocrafters and ticks them to craft every second.
-        Bukkit.getPluginManager().registerEvents(new CreationListener(this), this);
+        registry = new CrafterRegistryImpl(this); //The registry tracks all autocrafters and ticks them to craft every second.
+        Bukkit.getPluginManager().registerEvents(new CreationListener(), this);
     }
 
     @Override

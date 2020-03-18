@@ -27,7 +27,7 @@ public abstract class CrafterRegistry {
     /**
      * Get the list of worlds for which we have an autocrafter map.
      */
-    protected Set<String> getWorldsRegistered() {
+    public Set<String> getWorldsRegistered() {
         return crafters.keySet().parallelStream().filter(f -> !crafters.getOrDefault(f, new ConcurrentHashMap<>()).isEmpty()).collect(Collectors.toSet());
     }
 

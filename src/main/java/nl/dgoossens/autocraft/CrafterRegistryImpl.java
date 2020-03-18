@@ -29,10 +29,10 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.*;
 
-public class DropperRegistry extends CrafterRegistry {
+public class CrafterRegistryImpl extends CrafterRegistry {
     public static final int VERSION = 1;
-    public DropperRegistry(JavaPlugin jp) {
-        //TODO new MainDropperTick(this, recipeLoader).runTaskTimer(jp, 27, 27);
+    public CrafterRegistryImpl(JavaPlugin jp) {
+        new MainDropperTick(this, recipeLoader).runTaskTimer(jp, 27, 27);
     }
 
     @Override
@@ -98,7 +98,7 @@ public class DropperRegistry extends CrafterRegistry {
     public void load() {
         if (!AutomatedCrafting.INSTANCE.getDataFolder().exists()) AutomatedCrafting.INSTANCE.getDataFolder().mkdirs();
         File legacyFile = new File(AutomatedCrafting.INSTANCE.getDataFolder(), "droppers.json");
-        boolean legaycLoaded = false;
+        boolean legacyLoaded = false;
 
         //Legacyload
         if(legacyFile.exists()) {
@@ -121,7 +121,7 @@ public class DropperRegistry extends CrafterRegistry {
             }
 
             legacyFile.delete(); //Remove old file
-            legaycLoaded = true;
+            legacyLoaded = true;
         }
 
         //Load modern file
@@ -166,7 +166,7 @@ public class DropperRegistry extends CrafterRegistry {
             }
         }
 
-        if(legaycLoaded)
+        if(legacyLoaded)
             save();
     }
 

@@ -82,4 +82,12 @@ public class JsonItem {
         }
         return material;
     }
+
+    /**
+     * Get the itemstack created if this item is dropped.
+     */
+    public ItemStack toStack() {
+        //We ignore the tag here as tags can't have materials.
+        return new ItemStack(getMaterial(), count, (short) data);
+    }
 }

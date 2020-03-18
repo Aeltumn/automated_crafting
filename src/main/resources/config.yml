@@ -1,0 +1,6 @@
+# Allow alternate blocks to be used as autocrafters
+alternate-blocks:
+  # If true, dispensers can be turned into autocrafters
+  allowDispensers: false
+  # If true, hoppers can be turned into autocrafters
+  allowHoppers: false
