@@ -3,10 +3,7 @@ package nl.dgoossens.autocraft;
 import nl.dgoossens.autocraft.api.BlockPos;
 import org.bukkit.Material;
 import org.bukkit.Nameable;
-import org.bukkit.block.Block;
-import org.bukkit.block.Dispenser;
-import org.bukkit.block.Dropper;
-import org.bukkit.block.Hopper;
+import org.bukkit.block.*;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ItemFrame;
@@ -20,7 +17,6 @@ import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.hanging.HangingPlaceEvent;
 import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
-import org.bukkit.inventory.BlockInventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -41,8 +37,8 @@ public class CreationListener implements Listener {
     //This method specifically is needed because when droppers put the item directly into the neighbouring container the BlockDispenseEvent is not fired.
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onDispense(final InventoryMoveItemEvent e) {
-        if (e.getSource().getHolder() instanceof BlockInventoryHolder) {
-            Block bl = ((BlockInventoryHolder) e.getSource().getHolder()).getBlock();
+        if (e.getSource().getHolder() instanceof Container) {
+            Block bl = ((Container) e.getSource().getHolder()).getBlock();
             if (isValidBlock(bl, true))
                 e.setCancelled(true); //Autocrafters can't drop items normally. This is to avoid dispensing ingredients when powered.
         }
