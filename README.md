@@ -32,14 +32,14 @@ An open-source plugin for Spigot 1.12 through 1.15 which adds powerful autocraft
 **Other Features**
 - Autocrafters will put the items in the container on the block the dropper is facing towards, otherwise the item will be dropped.
 - Powering the dropper makes it stop automatically crafting. (locking the dropper also has this effect)
-- Alternatively plugins  can cancel AutoPostCraftItemEvent to undo the crafting just before it is completed. Here you can also get the itemstacks that will be used up.
+- Recipes are loaded as efficiently as possible depending on the minecraft version you're using.
 
 <br/> <br/>
 
 **Adding this plugin as a dependency**
 
 If you want to use this plugin as a dependency, for example to use the AutoCraftItemEvent. You can use a very handy service called [**jitpack.io**](https://jitpack.io/).<br/>
-This services makes it easy to add any git repositry as a dependency.
+This services makes it easy to add any git repository as a dependency.
 
 _Gradle_<br/>
 For Gradle you'll need to add the following six lines to your _build.gradle_ file:
@@ -48,7 +48,7 @@ repositories {
      maven { url 'https://jitpack.io' }
 }
 dependencies {
-    implementation 'com.github.daniel-goossens:automated_crafting:master-SNAPSHOT'
+    implementation 'com.github.Aeltumn:automated_crafting:master-SNAPSHOT'
 }
 ```
 
@@ -63,7 +63,7 @@ For Maven you can add the following lines to your _pom.xml_ file:
 </repositories>
 
 <dependency>
-    <groupId>com.github.daniel-goossens</groupId>
+    <groupId>com.github.Aeltumn</groupId>
     <artifactId>automated_crafting</artifactId>
     <version>master-SNAPSHOT</version>
 </dependency>
