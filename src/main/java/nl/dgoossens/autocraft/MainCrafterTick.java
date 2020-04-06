@@ -52,7 +52,22 @@ public class MainCrafterTick extends BukkitRunnable {
                         for(CraftingRecipe recipe : rl.getRecipesFor(item)) {
                             if(recipe == null) continue;
 
-                            //TODO attempt to craft and take ingredients
+                            //Check if the dropper contains all required items to craft the result.
+                            if(!recipe.containsRequirements(container.getInventory()))
+                                continue;
+
+                            //Take the materials we need for the craft from the crafter
+                            ArrayList<ItemStack> leftovers = recipe.takeMaterials(container.getInventory());
+
+                            //Put leftovers back into the inventory and otherwise drop them
+                            HashMap<Integer, ItemStack> leftoversToDrop = container.getInventory().addItem(leftovers.toArray(new ItemStack[0]));
+                            if(!leftoversToDrop.isEmpty() && bl.getWorld() != null) {
+                                leftoversToDrop.forEach((k, v) -> {
+                                    if(v == null || v.getType() == Material.AIR) return; //Can't drop this
+                                    v.setAmount(k);
+                                    bl.getWorld().dropItem(bl.getLocation().clone().add(0.5, 1.25, 0.5), v);
+                                });
+                            }
 
                             //Check if there's a container nearby that wants the data.
                             final DirectionalContainer dispenser = (DirectionalContainer) bl.getState().getData();

@@ -24,7 +24,8 @@ repositories {
 
 dependencies {
     // General Compilation Only Dependencies
-    compileOnly "org.spigotmc:spigot-api:${spigotVersion}"
+    compileOnly "org.bukkit:craftbukkit:1.15.2-R0.1-SNAPSHOT" //from mavenLocal(), run `mvn install` in BuildTools created craftbukkit directory
+    //compileOnly "org.spigotmc:spigot-api:${spigotVersion}"
     compileOnly group: 'com.mojang', name: 'authlib', version: '1.5.21'
     compile group: 'com.google.code.gson', name: 'gson', version: '2.7'
 

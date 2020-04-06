@@ -4,6 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
 import nl.dgoossens.autocraft.api.CraftingRecipe;
+import nl.dgoossens.autocraft.api.RecipeType;
 import nl.dgoossens.autocraft.compat.CustomCraftingCompat;
 import nl.dgoossens.autocraft.helpers.JsonRecipe;
 import nl.dgoossens.autocraft.helpers.MinecraftVersion;
@@ -111,9 +112,7 @@ public class RecipeLoader {
                 if (!loadedFilenames.contains(((Keyed) bukkitRecipe).getKey().getKey() + ".json")) {
                     //Have we already loaded it?
                     BukkitRecipe r = new BukkitRecipe(bukkitRecipe);
-                    if (!r.getType().equalsIgnoreCase("crafting_shaped") &&
-                            !r.getType().equalsIgnoreCase("crafting_shapeless")) continue; //We don't want the others!
-
+                    if (r.getType() == RecipeType.UNKNOWN) continue; //We don't want unknown recipes!
                     loadedFilenames.add(((Keyed) bukkitRecipe).getKey().getKey() + ".json");
                     loadedRecipes.add(r);
                 }

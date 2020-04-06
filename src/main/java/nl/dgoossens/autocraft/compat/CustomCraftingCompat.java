@@ -9,6 +9,7 @@ import me.wolfyscript.customcrafting.recipes.types.workbench.ShapelessCraftRecip
 import me.wolfyscript.utilities.api.custom_items.CustomItem;
 import nl.dgoossens.autocraft.api.CompatClass;
 import nl.dgoossens.autocraft.helpers.BukkitRecipe;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -27,7 +28,7 @@ public class CustomCraftingCompat implements CompatClass {
                         .entrySet().parallelStream().collect(Collectors.toMap(Map.Entry::getKey, e -> new ArrayList<>(e.getValue())))));
             else if(cr instanceof ShapelessCraftRecipe) {
                 Map<Character, List<CustomItem>> m = ((ShapelessCraftingRecipe) cr).getIngredients();
-                loadedRecipes.add(new BukkitRecipe(cr.getCustomResult(), m.entrySet().parallelStream().flatMap(f -> f.getValue().parallelStream()).collect(Collectors.toList())));
+                loadedRecipes.add(new BukkitRecipe(cr.getCustomResult(), m.entrySet().parallelStream().map(f -> new ArrayList(f.getValue())).collect(Collectors.toList())));
             }
         }
         return loadedRecipes;
