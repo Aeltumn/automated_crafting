@@ -65,6 +65,7 @@ public class MainCrafterTick extends BukkitRunnable {
                                     //Drop what couldn't fit
                                     if(!couldntFit.isEmpty() && loc.getWorld() != null) {
                                         couldntFit.forEach((k, v) -> {
+                                            if(v == null || v.getType() == Material.AIR) return; //Can't drop this
                                             v.setAmount(k);
                                             loc.getWorld().dropItem(loc.clone().add(0.5, 0.25, 0.5), v);
                                         });
