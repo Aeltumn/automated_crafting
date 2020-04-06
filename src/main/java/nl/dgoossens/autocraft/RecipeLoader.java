@@ -87,7 +87,7 @@ public class RecipeLoader {
                 }
             }
             Path path = fileSystem.getPath("/" + (MinecraftVersion.get().atLeast(MinecraftVersion.THIRTEEN) ? "data" : "assets") + "/minecraft/recipes");
-            searchFolder(path);
+            //TODO add in system to load from json files - searchFolder(path);
         } catch (Exception x) {
             x.printStackTrace();
         }

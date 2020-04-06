@@ -25,7 +25,7 @@ public class BukkitRecipe implements CraftingRecipe {
     private Map<Character, Collection<ItemStack>> key;
 
     //Shapeless Recipes
-    private Collection<List<ItemStack>> ingredients;
+    private Collection<Collection<ItemStack>> ingredients;
 
     //A few NMS classes we use because 1.12 is outdated and doesn't support cool recipes yet.
     private static final Class<?> recipeChoice = getClass("org.bukkit.inventory.RecipeChoice").orElse(null);
@@ -48,7 +48,7 @@ public class BukkitRecipe implements CraftingRecipe {
         this.key = key;
     }
 
-    public BukkitRecipe(ItemStack result, Collection<List<ItemStack>> ingredients) {
+    public BukkitRecipe(ItemStack result, List<Collection<ItemStack>> ingredients) {
         type = RecipeType.SHAPELESS;
         this.result = result;
         this.ingredients = ingredients;
@@ -66,7 +66,6 @@ public class BukkitRecipe implements CraftingRecipe {
             if (MinecraftVersion.get().atLeast(MinecraftVersion.THIRTEEN) && exactChoice != null) {
                 try {
                     key = new HashMap<>();
-                    //This uses a Draft API so this is the backup system! We prefer loading it ourselves.
                     Map<Character, Object> choiceMap = (Map<Character, Object>) ShapedRecipe.class.getMethod("getChoiceMap").invoke(bukkitRecipe);
                     choiceMap.forEach((k, v) -> {
                         List<ItemStack> values = new ArrayList<>();
@@ -108,7 +107,38 @@ public class BukkitRecipe implements CraftingRecipe {
             type = RecipeType.SHAPELESS;
             //This system of using spigot's choicemap system doesn't work at the moment. It's the backup system anyways.
             if (MinecraftVersion.get().atLeast(MinecraftVersion.THIRTEEN) && exactChoice != null) {
-
+                try {
+                    ingredients = new ArrayList<>();
+                    List<Object> choiceList = (List<Object>) ShapelessRecipe.class.getMethod("getChoiceList").invoke(bukkitRecipe);
+                    choiceList.forEach(v -> {
+                        List<ItemStack> values = new ArrayList<>();
+                        if (v != null) { //V can be null for some reason.
+                            if (exactChoice.isAssignableFrom(v.getClass()) || materialChoice.isAssignableFrom(v.getClass())) {
+                                try {
+                                    List<Object> choices = (List<Object>) v.getClass().getMethod("getChoices").invoke(v);
+                                    for (Object o : choices) {
+                                        if (o instanceof Material) values.add(new ItemStack((Material) o));
+                                        else values.add((ItemStack) o);
+                                    }
+                                } catch (Exception x) {
+                                    x.printStackTrace();
+                                }
+                            } else {
+                                ItemStack val = null;
+                                try {
+                                    val = (ItemStack) recipeChoice.getMethod("getItemStack").invoke(v);
+                                } catch (Exception x) {
+                                    x.printStackTrace();
+                                }
+                                if (val != null) values.add(val);
+                            }
+                        }
+                        ingredients.add(values);
+                    });
+                    return;
+                } catch (Exception x) {
+                    x.printStackTrace();
+                }
             } else {
                 ingredients = ((ShapelessRecipe) bukkitRecipe).getIngredientList().parallelStream().map(Collections::singletonList).collect(Collectors.toList());
             }
@@ -137,7 +167,7 @@ public class BukkitRecipe implements CraftingRecipe {
                     }
                     //Put the corresponding item for each part of the shape into the requirements list
                     occurrences.forEach((c, i) -> {
-                        RecipeRequirement rr = new RecipeRequirement(new ArrayList<>(key.getOrDefault(c, new ArrayList<>())), i);
+                        RecipeRequirement rr = new RecipeRequirement(key.getOrDefault(c, new HashSet<>()), i);
                         //Return if invalid (key does not exit in map)
                         if(rr.isInvalid()) {
                             AutomatedCrafting.getInstance().warning("Warning shaped recipe with pattern [["+ String.join("], [", pattern) +"]] had character in pattern not in key map.");
@@ -242,10 +272,10 @@ public class BukkitRecipe implements CraftingRecipe {
      * are able to use the same item for crafting.
      */
     public static class RecipeRequirement {
-        private List<ItemStack> item;
+        private Collection<ItemStack> item;
         private int amount;
 
-        public RecipeRequirement(List<ItemStack> items, int amount) {
+        public RecipeRequirement(Collection<ItemStack> items, int amount) {
             this.item = items;
             this.amount = amount;
         }

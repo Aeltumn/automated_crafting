@@ -28,7 +28,7 @@ public class CustomCraftingCompat implements CompatClass {
                         .entrySet().parallelStream().collect(Collectors.toMap(Map.Entry::getKey, e -> new ArrayList<>(e.getValue())))));
             else if(cr instanceof ShapelessCraftRecipe) {
                 Map<Character, List<CustomItem>> m = ((ShapelessCraftingRecipe) cr).getIngredients();
-                loadedRecipes.add(new BukkitRecipe(cr.getCustomResult(), m.entrySet().parallelStream().map(f -> new ArrayList(f.getValue())).collect(Collectors.toList())));
+                loadedRecipes.add(new BukkitRecipe(cr.getCustomResult(), m.entrySet().parallelStream().map(f -> (ArrayList<ItemStack>) new ArrayList(f.getValue())).collect(Collectors.toList())));
             }
         }
         return loadedRecipes;
