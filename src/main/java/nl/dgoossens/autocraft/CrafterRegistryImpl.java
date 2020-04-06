@@ -8,11 +8,7 @@ import com.google.gson.stream.JsonWriter;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
-import nl.dgoossens.autocraft.api.CrafterRegistry;
-import nl.dgoossens.autocraft.api.CraftingRecipe;
-import nl.dgoossens.autocraft.events.AutocrafterCreateEvent;
-import nl.dgoossens.autocraft.events.AutocrafterDestroyEvent;
-import nl.dgoossens.autocraft.api.BlockPos;
+import nl.dgoossens.autocraft.api.*;
 import nl.dgoossens.autocraft.helpers.ReflectionHelper;
 import nl.dgoossens.autocraft.helpers.SerializedItem;
 import org.bukkit.*;
@@ -28,18 +24,19 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class CrafterRegistryImpl extends CrafterRegistry {
     public static final int VERSION = 1;
     public CrafterRegistryImpl(JavaPlugin jp) {
-        new MainDropperTick(this, recipeLoader).runTaskTimer(jp, 27, 27);
+        new MainCrafterTick(this, recipeLoader).runTaskTimer(jp, 27, 27);
     }
 
     @Override
     public boolean checkBlock(final Location location, final Player player) {
         final Block block = location.getBlock();
         final BlockPos pos = new BlockPos(block);
-        final ItemStack m = getAutocrafterMap(location.getWorld()).entrySet().parallelStream().filter(f -> f.getKey().equals(pos)).findAny().map(Map.Entry::getValue).orElse(null);
+        final ItemStack m = getAutocrafters(location.getWorld()).map(f -> f.get(pos)).orElse(null);
         if ((!(block.getState() instanceof Container)))
             return false;
 
@@ -67,15 +64,14 @@ public class CrafterRegistryImpl extends CrafterRegistry {
 
     @Override
     public boolean create(final Location l, final Player p, final ItemStack type) {
-        AutocrafterCreateEvent e = new AutocrafterCreateEvent(l, p, type);
-        Bukkit.getPluginManager().callEvent(e);
-        if(!p.hasPermission("automatedcrafting.makeautocrafters") || e.isCancelled()) {
+        if(!p.hasPermission("automatedcrafting.makeautocrafters") || type == null)
             return false;
-        }
         BlockPos el = new BlockPos(l.getBlockX(), l.getBlockY(), l.getBlockZ());
-        getAutocrafterMap(l.getWorld()).keySet().removeIf(f -> f.equals(el));
-        if(type!=null)
-            getAutocrafterMap(l.getWorld()).put(el, type);
+        Optional<AutocrafterPositions> m = getAutocrafters(l.getWorld());
+        m.ifPresent(am -> {
+            am.destroy(el); //Destroy old ones
+            am.add(el, type);  //Add the new one
+        });
         save();
         return true;
     }
@@ -83,14 +79,8 @@ public class CrafterRegistryImpl extends CrafterRegistry {
     @Override
     public void destroy(final Location l) {
         BlockPos el = new BlockPos(l.getBlockX(), l.getBlockY(), l.getBlockZ());
-        getAutocrafterMap(l.getWorld()).keySet().removeIf(el::equals);
-        for (BlockPos p : new HashSet<>(getAutocrafterMap(l.getWorld()).keySet())) {
-            if (el.equals(p)) {
-                AutocrafterDestroyEvent e = new AutocrafterDestroyEvent(l, getAutocrafterMap(l.getWorld()).get(p));
-                Bukkit.getPluginManager().callEvent(e);
-                getAutocrafterMap(l.getWorld()).remove(p);
-            }
-        }
+        Optional<AutocrafterPositions> m = getAutocrafters(l.getWorld());
+        m.ifPresent(am -> am.destroy(el));
         save();
     }
 
@@ -99,6 +89,9 @@ public class CrafterRegistryImpl extends CrafterRegistry {
         if (!AutomatedCrafting.INSTANCE.getDataFolder().exists()) AutomatedCrafting.INSTANCE.getDataFolder().mkdirs();
         File legacyFile = new File(AutomatedCrafting.INSTANCE.getDataFolder(), "droppers.json");
         boolean legacyLoaded = false;
+
+        //Reset stored crafter information
+        crafters = new ConcurrentHashMap<>();
 
         //Legacyload
         if(legacyFile.exists()) {
@@ -111,7 +104,10 @@ public class CrafterRegistryImpl extends CrafterRegistry {
                     String n = jr.nextName();
                     LegacyBlockPos lbp = g.fromJson(jr, LegacyBlockPos.class);
                     ItemStack it = AutomatedCrafting.GSON.fromJson(n, LegacySerializedItem.class).getItem();
-                    getAutocrafterMap(lbp.world).put(new BlockPos(lbp.x, lbp.y, lbp.z), it);
+                    AutocrafterPositions m = new AutocrafterPositions();
+                    m.add(new BlockPos(lbp.x, lbp.y, lbp.z), it);
+                    if(!m.isInvalid())
+                        crafters.put(lbp.world, m);
                 }
                 jr.endObject();
                 jr.close();
@@ -132,31 +128,52 @@ public class CrafterRegistryImpl extends CrafterRegistry {
                 if (!jr.hasNext()) return;
                 if (jr.peek() != JsonToken.BEGIN_OBJECT) return;
                 jr.beginObject();
-                String s = jr.nextName();
+                jr.nextName();
                 int version = jr.nextInt();
                 if(version != VERSION) {
                     //TODO Add compatibility for older versions of configuration when new configuration versions are added!
                     AutomatedCrafting.INSTANCE.warning("You were running an old version of AutomatedCrafting (file version "+VERSION+") and all exsisting autocrafters have been invalidated, sorry! (every autocrafter will need to be rebuilt)");
                     return;
                 }
-                Gson g = new GsonBuilder().create();
                 while (jr.hasNext()) {
                     String world = jr.nextName();
-                    Map<BlockPos, ItemStack> m = getAutocrafterMap(world);
+                    AutocrafterPositions m = new AutocrafterPositions();
                     jr.beginObject();
                     while(jr.hasNext()) {
-                        String n = jr.nextName();
-                        BlockPos bp;
+                        String n = jr.nextName(); //Chunk identifier code
+                        ChunkIdentifier ci;
                         try {
-                            bp = BlockPos.fromLong(Long.parseLong(n));
+                            ci = new ChunkIdentifier(Long.parseLong(n));
                         } catch(NumberFormatException ignored) {
-                            jr.skipValue();
+                            //Skip through the data for this chunk
+                            jr.beginObject();
+                            while(jr.hasNext()) {
+                                jr.nextName();
+                                jr.skipValue();
+                            }
+                            jr.endObject();
                             break;
                         }
-                        //Update method of saving items to json
-                        m.put(bp, AutomatedCrafting.GSON.fromJson(jr.nextString(), SerializedItem.class).getItem());
+                        jr.beginObject();
+                        while(jr.hasNext()) {
+                            String n2 = jr.nextName(); //Chunk identifier code
+                            long l;
+                            try {
+                                l = Long.parseLong(n2);
+                            } catch(NumberFormatException ignored) {
+                                jr.skipValue();
+                                break;
+                            }
+                            //Update method of saving items to json
+                            m.add(ci, l, AutomatedCrafting.GSON.fromJson(jr.nextString(), SerializedItem.class).getItem());
+                        }
+                        jr.endObject();
                     }
                     jr.endObject();
+
+                    //If this world has data we add it to the full list
+                    if(!m.isInvalid())
+                        crafters.put(world, m);
                 }
                 jr.endObject();
                 jr.close();
@@ -182,13 +199,22 @@ public class CrafterRegistryImpl extends CrafterRegistry {
             jw.value(VERSION);
 
             for(String s : getWorldsRegistered()) {
+                Optional<AutocrafterPositions> m = getAutocrafters(s);
+                if(!m.isPresent()) continue;
+                if(m.get().isInvalid()) continue;
+
                 jw.name(s);
                 jw.beginObject();
-                Map<BlockPos, ItemStack> m = getAutocrafterMap(s);
-                for (BlockPos d : m.keySet()) {
-                    if (m.get(d) == null) continue;
-                    jw.name(String.valueOf(d.toLong()));
-                    jw.jsonValue(AutomatedCrafting.GSON.toJson(new SerializedItem(m.get(d))));
+                for (ChunkIdentifier ci : m.get().listChunks()) {
+                    jw.name(String.valueOf(ci.toLong()));
+                    ArrayList<Autocrafter> positions = m.get().getInChunk(ci);
+                    jw.beginObject();
+                    for(Autocrafter a : positions) {
+                        if(a.isBroken()) continue; //Don't save broken ones.
+                        jw.name(String.valueOf(a.getPositionAsLong()));
+                        jw.jsonValue(AutomatedCrafting.GSON.toJson(new SerializedItem(a.getItem())));
+                    }
+                    jw.endObject();
                 }
                 jw.endObject();
             }

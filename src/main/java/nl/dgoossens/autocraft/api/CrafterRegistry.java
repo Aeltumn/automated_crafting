@@ -10,10 +10,9 @@ import org.bukkit.inventory.ItemStack;
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 public abstract class CrafterRegistry {
-    private ConcurrentHashMap<String, ConcurrentHashMap<BlockPos, ItemStack>> crafters = new ConcurrentHashMap<>();
+    protected ConcurrentHashMap<String, AutocrafterPositions> crafters = new ConcurrentHashMap<>();
     protected final RecipeLoader recipeLoader;
     protected final File file;
 
@@ -28,21 +27,21 @@ public abstract class CrafterRegistry {
      * Get the list of worlds for which we have an autocrafter map.
      */
     public Set<String> getWorldsRegistered() {
-        return crafters.keySet().parallelStream().filter(f -> !crafters.getOrDefault(f, new ConcurrentHashMap<>()).isEmpty()).collect(Collectors.toSet());
+        return crafters.keySet();
     }
 
     /**
      * Get a map of all autocrafters that exist in the world.
      */
-    public Map<BlockPos, ItemStack> getAutocrafterMap(String world) {
-        return crafters.computeIfAbsent(world, (w) -> new ConcurrentHashMap<>());
+    public Optional<AutocrafterPositions> getAutocrafters(String world) {
+        return Optional.ofNullable(crafters.get(world));
     }
 
     /**
      * Get a map of all autocrafters that exist in the world.
      */
-    public Map<BlockPos, ItemStack> getAutocrafterMap(World world) {
-        return crafters.computeIfAbsent(world.getName(), (w) -> new ConcurrentHashMap<>());
+    public Optional<AutocrafterPositions> getAutocrafters(World world) {
+        return Optional.ofNullable(crafters.get(world.getName()));
     }
 
     /**

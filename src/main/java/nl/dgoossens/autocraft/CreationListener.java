@@ -28,7 +28,7 @@ public class CreationListener implements Listener {
      */
     public static boolean isValidBlock(final Block bl, boolean existing) {
         final BlockPos bp = new BlockPos(bl);
-        if(existing && AutomatedCrafting.INSTANCE.getCrafterRegistry().getAutocrafterMap(bl.getWorld()).keySet().parallelStream().noneMatch(bp::equals)) return false;
+        if(existing && AutomatedCrafting.INSTANCE.getCrafterRegistry().getAutocrafters(bl.getWorld()).map(f -> f.get(bp) != null).orElse(false)) return false;
         if(ConfigFile.allowDispensers() && bl.getState() instanceof Dispenser) return true;
         if(ConfigFile.allowHoppers() && bl.getState() instanceof Hopper) return true;
         return bl.getState() instanceof Dropper;
