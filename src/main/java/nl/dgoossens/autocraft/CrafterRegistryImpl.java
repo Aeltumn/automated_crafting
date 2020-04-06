@@ -72,7 +72,7 @@ public class CrafterRegistryImpl extends CrafterRegistry {
             am.destroy(el); //Destroy old ones
             am.add(el, type);  //Add the new one
         });
-        save();
+        markDirty();
         return true;
     }
 
@@ -81,7 +81,7 @@ public class CrafterRegistryImpl extends CrafterRegistry {
         BlockPos el = new BlockPos(l.getBlockX(), l.getBlockY(), l.getBlockZ());
         Optional<AutocrafterPositions> m = getAutocrafters(l.getWorld());
         m.ifPresent(am -> am.destroy(el));
-        save();
+        markDirty();
     }
 
     @Override
@@ -184,11 +184,11 @@ public class CrafterRegistryImpl extends CrafterRegistry {
         }
 
         if(legacyLoaded)
-            save();
+            markDirty();
     }
 
     @Override
-    public void save() {
+    public void forceSave() {
         try {
             if (!file.exists()) file.createNewFile();
             FileWriter fw = new FileWriter(file);
@@ -222,7 +222,11 @@ public class CrafterRegistryImpl extends CrafterRegistry {
             jw.flush();
             jw.close();
             fw.close();
-        } catch(Exception x) { x.printStackTrace(); }
+        } catch(Exception x) {
+            x.printStackTrace();
+        }
+
+        saveTime = Long.MAX_VALUE; //Save again at the end of time.
     }
 
     //Used for legacy loading of old data files.

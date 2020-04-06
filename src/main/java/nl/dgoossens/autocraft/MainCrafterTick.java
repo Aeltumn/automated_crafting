@@ -36,7 +36,7 @@ public class MainCrafterTick extends BukkitRunnable {
                     //Get all autocrafters in this chunk
                     for(Autocrafter a : m.getInChunk(ci)) {
                         if(a.isBroken()) continue; //Ignore broken ones.
-                        Block bl = ch.getBlock(a.getX(), ci.getY() * 16 + a.getY(), a.getZ());
+                        Block bl = ch.getBlock(a.getX(), a.getY(), a.getZ());
                         ItemStack item = a.getItem();
 
                         //If the block was broken we mark it broken and no longer save it next time.

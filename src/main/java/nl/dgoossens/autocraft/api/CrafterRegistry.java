@@ -12,9 +12,12 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class CrafterRegistry {
+    private static final long SAVE_DELAY = (150) * 1000; //Wait 2.5 minutes = 150 seconds
+
     protected ConcurrentHashMap<String, AutocrafterPositions> crafters = new ConcurrentHashMap<>();
     protected final RecipeLoader recipeLoader;
     protected final File file;
+    protected long saveTime = Long.MAX_VALUE;
 
     public CrafterRegistry() {
         recipeLoader = AutomatedCrafting.INSTANCE.getRecipeLoader();
@@ -70,6 +73,15 @@ public abstract class CrafterRegistry {
 
     /**
      * Saves all autocrafters to the configuration.
+     * Don't use this method!
      */
-    public abstract void save();
+    public abstract void forceSave();
+
+    /**
+     * After marking the crafter registry dirty it will be saved soon.
+     */
+    public void markDirty() {
+        //We save either when we previously wanted to save or in five minutes.
+        saveTime = Math.min(saveTime, System.currentTimeMillis() + SAVE_DELAY);
+    }
 }

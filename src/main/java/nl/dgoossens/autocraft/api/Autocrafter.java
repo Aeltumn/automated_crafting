@@ -6,20 +6,21 @@ import org.bukkit.inventory.ItemStack;
  * Stores all the data we have on an individual autocrafter.
  */
 public class Autocrafter {
-    private short x, y, z;
+    private short x, z;
+    private int y;
     private ItemStack item;
     private boolean broken;
 
     Autocrafter(BlockPos position, ItemStack item) {
         this.x = (short) (position.getX() & 0xF);
-        this.y = (short) (position.getY() & 0xF);
+        this.y = position.getY();
         this.z = (short) (position.getZ() & 0xF);
         this.item = item;
     }
 
     Autocrafter(long l, ItemStack item) {
-        this.z = (short) (l >>> 32);
-        this.y = (short) ((l >>> 16) & 0xFFFF);
+        this.y = (short) (l >>> 32);
+        this.z = (short) ((l >>> 16) & 0xFFFF);
         this.x = (short) (l & 0xFFFF);
         this.item = item;
     }
@@ -37,7 +38,7 @@ public class Autocrafter {
         return x;
     }
 
-    public short getY() {
+    public int getY() {
         return y;
     }
 
@@ -49,7 +50,7 @@ public class Autocrafter {
      * Get the position of this autocrafter as a long.
      */
     public long getPositionAsLong() {
-        return x + y << 16 + z << 32;
+        return x + z << 16 + y << 32;
     }
 
     /**
@@ -57,9 +58,9 @@ public class Autocrafter {
      */
     public static long getPositionLong(BlockPos position) {
         short x = (short) (position.getX() & 0xF);
-        short y = (short) (position.getY() & 0xF);
+        int y = position.getY();
         short z = (short) (position.getZ() & 0xF);
-        return x + y << 16 + z << 32;
+        return x + y << 32 + z << 16;
     }
 
     /**
