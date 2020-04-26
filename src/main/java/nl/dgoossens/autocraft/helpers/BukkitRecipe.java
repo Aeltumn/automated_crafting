@@ -1,13 +1,24 @@
 package nl.dgoossens.autocraft.helpers;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import nl.dgoossens.autocraft.AutomatedCrafting;
 import nl.dgoossens.autocraft.api.CraftingRecipe;
 import nl.dgoossens.autocraft.api.RecipeType;
 import org.bukkit.Material;
-import org.bukkit.inventory.*;
-
-import java.util.*;
-import java.util.stream.Collectors;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.Recipe;
+import org.bukkit.inventory.ShapedRecipe;
+import org.bukkit.inventory.ShapelessRecipe;
 
 /**
  * Build a recipe from item stacks in code.
@@ -28,12 +39,12 @@ public class BukkitRecipe implements CraftingRecipe {
     private Collection<Collection<ItemStack>> ingredients;
 
     //A few NMS classes we use because 1.12 is outdated and doesn't support cool recipes yet.
-    private static final Class<?> recipeChoice = getClass("org.bukkit.inventory.RecipeChoice").orElse(null);
+    private static final Class<?> recipeChoice = findClass("org.bukkit.inventory.RecipeChoice").orElse(null);
     private static final Class<?> exactChoice = recipeChoice == null ? null : recipeChoice.getDeclaredClasses()[0];
     private static final Class<?> materialChoice = recipeChoice == null ? null : recipeChoice.getDeclaredClasses()[1];
 
     //Get a class and put it in an optional.
-    private static Optional<Class<?>> getClass(String className) {
+    private static Optional<Class<?>> findClass(String className) {
         try {
             return Optional.ofNullable(Class.forName(className));
         } catch (Exception x) {
@@ -62,8 +73,9 @@ public class BukkitRecipe implements CraftingRecipe {
         if (bukkitRecipe instanceof ShapedRecipe) {
             type = RecipeType.SHAPED;
             pattern = ((ShapedRecipe) bukkitRecipe).getShape();
-            //This system of using spigot's choicemap system doesn't work at the moment. It's the backup system anyways.
-            if (MinecraftVersion.get().atLeast(MinecraftVersion.THIRTEEN) && exactChoice != null) {
+
+            // since late 1.13+ we have the new choice map system
+            if (exactChoice != null) {
                 try {
                     key = new HashMap<>();
                     Map<Character, Object> choiceMap = (Map<Character, Object>) ShapedRecipe.class.getMethod("getChoiceMap").invoke(bukkitRecipe);
@@ -92,7 +104,6 @@ public class BukkitRecipe implements CraftingRecipe {
                         }
                         key.put(k, values);
                     });
-                    return;
                 } catch (Exception x) {
                     x.printStackTrace();
                 }
@@ -105,8 +116,9 @@ public class BukkitRecipe implements CraftingRecipe {
             }
         } else if (bukkitRecipe instanceof ShapelessRecipe) {
             type = RecipeType.SHAPELESS;
-            //This system of using spigot's choicemap system doesn't work at the moment. It's the backup system anyways.
-            if (MinecraftVersion.get().atLeast(MinecraftVersion.THIRTEEN) && exactChoice != null) {
+
+            // since late 1.13+ we have the new choice map system
+            if (exactChoice != null) {
                 try {
                     ingredients = new ArrayList<>();
                     List<Object> choiceList = (List<Object>) ShapelessRecipe.class.getMethod("getChoiceList").invoke(bukkitRecipe);
@@ -135,7 +147,6 @@ public class BukkitRecipe implements CraftingRecipe {
                         }
                         ingredients.add(values);
                     });
-                    return;
                 } catch (Exception x) {
                     x.printStackTrace();
                 }
@@ -199,10 +210,12 @@ public class BukkitRecipe implements CraftingRecipe {
 
         //Test if any requirements are NOT met
         ItemStack[] contents = new ItemStack[inv.getStorageContents().length];
-        for(int j = 0; j < contents.length; j++)
-            contents[j] = inv.getStorageContents()[j].clone(); //Build clones so we can track which items we've already used as a component.
-        for(RecipeRequirement r : requirements) {
-            if(!r.isContainedInInventory(contents))
+        for (int j = 0; j < contents.length; j++) {
+            if (inv.getStorageContents()[j] != null)
+                contents[j] = inv.getStorageContents()[j].clone(); //Build clones so we can track which items we've already used as a component.
+        }
+        for (RecipeRequirement r : requirements) {
+            if (!r.isContainedInInventory(contents))
                 return false;
         }
         return true;
@@ -220,8 +233,12 @@ public class BukkitRecipe implements CraftingRecipe {
                 //This item was used and something was taken
                 if(remain != amountToTake) {
                     ItemStack res = getContainerItem(i);
-                    res.setAmount(amountToTake - remain); //How many did we take, that's how many of this container item should be put back.
-                    ret.add(res);
+                    if (res != null) {
+                        //How many did we take, that's how many of this container item should be put back.
+                        res.setAmount(Math.max(0, amountToTake - remain));
+                        if (res.getAmount() > 0)
+                            ret.add(res);
+                    }
                 }
                 amountToTake = remain;
                 //We don't need to keep trying to complete this requirement if we've already done so.

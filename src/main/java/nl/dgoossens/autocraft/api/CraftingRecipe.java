@@ -9,8 +9,9 @@ import java.util.ArrayList;
 
 public interface CraftingRecipe {
     static final Class<?> craftItemStack = ReflectionHelper.getOptionalBukkitClass("inventory.CraftItemStack").orElse(null);
-    static final Class<?> itemStack = ReflectionHelper.getOptionalBukkitClass("ItemStack").orElse(null);
-    static final Class<?> item = ReflectionHelper.getOptionalBukkitClass("Item").orElse(null);
+    static final Class<?> iMaterial = ReflectionHelper.getOptionalNMSClass("IMaterial").orElse(null);
+    static final Class<?> itemStack = ReflectionHelper.getOptionalNMSClass("ItemStack").orElse(null);
+    static final Class<?> item = ReflectionHelper.getOptionalNMSClass("Item").orElse(null);
 
     /**
      * The type of this recipe.
@@ -50,7 +51,8 @@ public interface CraftingRecipe {
         try {
             Object nmsStack = craftItemStack.getMethod("asNMSCopy", ItemStack.class).invoke(null, input);
             Object craftingResult = ReflectionHelper.getField(item, ReflectionHelper.getField(itemStack, nmsStack, "item"), "craftingResult");
-            Object stack = itemStack.getConstructor(item).newInstance(craftingResult);
+            // since 1.15 we have IMaterial
+            Object stack = iMaterial != null ? itemStack.getConstructor(iMaterial).newInstance(craftingResult) : itemStack.getConstructor(item).newInstance(craftingResult);
             ItemStack i = (ItemStack) craftItemStack.getMethod("asCraftMirror", itemStack).invoke(null, stack);
             if(i == null || i.getType() == Material.AIR) return null;
             else return i;

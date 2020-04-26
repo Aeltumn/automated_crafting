@@ -48,6 +48,14 @@ public abstract class CrafterRegistry {
     }
 
     /**
+     * Get a map of all autocrafters in the world.
+     * Create one if none exist.
+     */
+    public AutocrafterPositions getOrCreateAutocrafters(World world) {
+        return crafters.computeIfAbsent(world.getName(), (w) -> new AutocrafterPositions());
+    }
+
+    /**
      * Checks the validity of the item in the item frame, notifies the player in chat.
      */
     public abstract boolean checkBlock(final Location location, final Player player);

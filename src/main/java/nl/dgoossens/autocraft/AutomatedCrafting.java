@@ -31,7 +31,7 @@ public class AutomatedCrafting extends JavaPlugin {
 
         //A little reward for the folks that don't bother to include the supported versions.
         if (ReflectionHelper.getVersion().startsWith("v1_8")) {
-            getLogger().severe("My plugins don't support 1.8 and never will, update to 1.12+ or find another plugin.");
+            getLogger().severe("This plugin doesn't support 1.8 and never will, update to 1.12+ or find another plugin.");
             getPluginLoader().disablePlugin(this);
             Bukkit.shutdown();
             return;

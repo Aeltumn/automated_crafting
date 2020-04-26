@@ -1,6 +1,7 @@
 package nl.dgoossens.autocraft;
 
 import nl.dgoossens.autocraft.api.Autocrafter;
+import nl.dgoossens.autocraft.api.BlockPos;
 import nl.dgoossens.autocraft.api.ChunkIdentifier;
 import nl.dgoossens.autocraft.api.CraftingRecipe;
 import org.bukkit.*;
@@ -26,28 +27,28 @@ public class MainCrafterTick extends BukkitRunnable {
     public void run() {
         for(String s : cr.getWorldsRegistered()) {
             World w = Bukkit.getWorld(s);
-            if(w == null) continue; //We skip unloaded worlds.M
+            if(w == null) continue; //We skip unloaded worlds.
 
             cr.getAutocrafters(s).ifPresent(m -> {
                 for(ChunkIdentifier ci : m.listChunks()) {
-                    if(w.isChunkLoaded(ci.getX(), ci.getZ())) return; //If the chunk isn't loaded we skip it.
+                    if(!w.isChunkLoaded(ci.getX(), ci.getZ())) continue; //If the chunk isn't loaded we skip it.
                     Chunk ch = w.getChunkAt(ci.getX(), ci.getZ());
 
-                    //Get all autocrafters in this chunk
                     for(Autocrafter a : m.getInChunk(ci)) {
                         if(a.isBroken()) continue; //Ignore broken ones.
-                        Block bl = ch.getBlock(a.getX(), a.getY(), a.getZ());
+                        BlockPos position = a.getPosition();
+                        Block bl = ch.getBlock(position.getX(), position.getY(), position.getZ());
                         ItemStack item = a.getItem();
 
                         //If the block was broken we mark it broken and no longer save it next time.
                         if(!CreationListener.isValidBlock(bl, false) || !(bl.getState() instanceof Container)) {
                             a.markBroken();
-                            return;
+                            continue;
                         }
 
                         final Container container = (Container) bl.getState();
                         if (container.isLocked() || bl.getBlockPower() > 0)
-                            return; //If locked or powered we don't craft.
+                            continue; //If locked or powered we don't craft.
 
                         for(CraftingRecipe recipe : rl.getRecipesFor(item)) {
                             if(recipe == null) continue;
@@ -93,9 +94,8 @@ public class MainCrafterTick extends BukkitRunnable {
                                 if(i.getType() != Material.AIR)
                                     loc.getWorld().dropItem(loc.clone().add(0.5, 0.25, 0.5), i);
                             }
-                            return; //If one recipe got completed, stop the crafting.
+                            break; //If one recipe got completed, stop the crafting.
                         }
-                        return;
                     }
                 }
             });

@@ -3,23 +3,28 @@ package nl.dgoossens.autocraft;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
+import java.io.BufferedReader;
+import java.net.URI;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.stream.Collectors;
 import nl.dgoossens.autocraft.api.CraftingRecipe;
 import nl.dgoossens.autocraft.api.RecipeType;
 import nl.dgoossens.autocraft.compat.CustomCraftingCompat;
-import nl.dgoossens.autocraft.helpers.JsonRecipe;
-import nl.dgoossens.autocraft.helpers.MinecraftVersion;
 import nl.dgoossens.autocraft.helpers.BukkitRecipe;
+import nl.dgoossens.autocraft.helpers.JsonRecipe;
+import nl.dgoossens.autocraft.helpers.ReflectionHelper;
 import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.command.CommandSender;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
-
-import java.io.BufferedReader;
-import java.net.URI;
-import java.nio.file.*;
-import java.util.*;
-import java.util.stream.Collectors;
 
 public class RecipeLoader {
     private final AutomatedCrafting instance;
@@ -70,26 +75,31 @@ public class RecipeLoader {
      * Reloads all recipes from the minecraft jar and otherwise from bukkit.
      */
     protected void reload(final CommandSender listener) {
-        if (listener != null) listener.sendMessage("(Re)loading recipes...");
+        if (listener != null)
+            listener.sendMessage("(Re)loading recipes...");
         instance.getLogger().info("(Re)loading recipes...");
         loadedRecipes.clear();
         loadedFilenames.clear();
         long t = System.currentTimeMillis();
 
-        //Load from Minecraft's assets
-        try {
-            if (fileSystem == null) {
-                URI uri = Bukkit.class.getResource("/assets/.mcassetsroot").toURI();
-                try {
-                    fileSystem = FileSystems.getFileSystem(uri);
-                } catch (Exception x) {
-                    fileSystem = FileSystems.newFileSystem(uri, Collections.emptyMap());
+        //Load from Minecraft's assets/data package
+        if (ConfigFile.enableJsonLoading()) {
+            if (ReflectionHelper.getVersion().startsWith("v1_12"))
+                throw new UnsupportedOperationException("The json loading system does not work on Minecraft 1.12.");
+            try {
+                if (fileSystem == null) {
+                    URI uri = Bukkit.class.getResource("/assets/.mcassetsroot").toURI();
+                    try {
+                        fileSystem = FileSystems.getFileSystem(uri);
+                    } catch (Exception x) {
+                        fileSystem = FileSystems.newFileSystem(uri, Collections.emptyMap());
+                    }
                 }
+                Path path = fileSystem.getPath("/data/minecraft/recipes");
+                searchFolder(path);
+            } catch (Exception x) {
+                x.printStackTrace();
             }
-            Path path = fileSystem.getPath("/" + (MinecraftVersion.get().atLeast(MinecraftVersion.THIRTEEN) ? "data" : "assets") + "/minecraft/recipes");
-            //TODO add in system to load from json files - searchFolder(path);
-        } catch (Exception x) {
-            x.printStackTrace();
         }
 
         //Check if we loaded anything this iteration
@@ -132,16 +142,8 @@ public class RecipeLoader {
         j = loadedRecipes.size();
 
         //Custom compatibility
-        if (Bukkit.getPluginManager().isPluginEnabled("CustomCrafting")) {
-            if(Bukkit.getPluginManager().getPlugin("CustomCrafting").getDescription().getVersion().startsWith("1.5")) {
-                String s = "You are running CustomCrafting v1.5+ which is unfortunately not compatible with AutomatedCrafting. Please use an older version of CustomCrafting.";
-                if (listener != null)
-                    listener.sendMessage(s);
-                instance.getLogger().info(s);
-            } else {
-                loadedRecipes.addAll(new CustomCraftingCompat().load());
-            }
-        }
+        if (Bukkit.getPluginManager().isPluginEnabled("CustomCrafting"))
+            loadedRecipes.addAll(new CustomCraftingCompat().load());
 
         //Check if something was loaded this iteration
         j = loadedRecipes.size() - j;
@@ -156,6 +158,7 @@ public class RecipeLoader {
      * Automatically walks through the folder at the path
      * and loads all files in it.
      */
+    @Deprecated
     private void searchFolder(final Path path) throws Exception {
         if (path == null) return;
         //We use none match here as it stops the moment one does match. (when we get an exception)
@@ -171,6 +174,7 @@ public class RecipeLoader {
      *
      * @return true if an exception occurred
      */
+    @Deprecated
     private boolean loadFile(final Path file) {
         if (!file.toString().endsWith(".json")) return false;
         if (loadedFilenames.contains(file.getFileName().toString()))
@@ -184,15 +188,14 @@ public class RecipeLoader {
         } catch (Exception x) {
             x.printStackTrace();
 
-            AutomatedCrafting.getInstance().getLogger().warning("Failed to load file " + file.getFileName().toString() + "! Here's a printout of said file:");
+            AutomatedCrafting.getInstance().getLogger().warning("Failed to load file " + file.getFileName().toString() + "! Here's a printout of the file:");
             //Print file to console
             try {
                 final BufferedReader bufferedReader = new BufferedReader(Files.newBufferedReader(file));
                 while (bufferedReader.ready())
                     System.out.println(bufferedReader.readLine());
                 bufferedReader.close();
-            } catch (Exception ignored) {
-            }
+            } catch (Exception ignored) { }
             return true;
         }
         return false;
@@ -201,6 +204,7 @@ public class RecipeLoader {
     /**
      * Loads a single recipe from a JsonReader.
      */
+    @Deprecated
     private void loadReader(final JsonReader reader) throws Exception {
         JsonElement obj = parser.parse(reader);
         if (!obj.isJsonObject()) return;

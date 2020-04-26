@@ -10,6 +10,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * The json recipe system is not yet ready to use.
+ */
+@Deprecated
 public class JsonRecipe implements CraftingRecipe {
     private String type;
     private String group;
@@ -28,20 +32,12 @@ public class JsonRecipe implements CraftingRecipe {
 
     @Override
     public boolean containsRequirements(Inventory inv) {
-        switch(getType()) {
-            case SHAPED:
-
-                break;
-            case SHAPELESS:
-
-                break;
-        }
         return false;
     }
 
     @Override
     public ArrayList<ItemStack> takeMaterials(Inventory inv) {
-        return null; //TODO impl
+        return new ArrayList<>();
     }
 
     @Override

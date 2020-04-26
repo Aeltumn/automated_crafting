@@ -18,8 +18,8 @@ public class ChunkIdentifier {
     }
 
     ChunkIdentifier(BlockPos position) {
-        this.x = position.getX() >> 16; //Needs 21 bits
-        this.z = position.getZ() >> 16; //Needs 21 bits
+        this.x = position.getX() >> 4;
+        this.z = position.getZ() >> 4;
     }
 
     public int getX() {
@@ -28,6 +28,10 @@ public class ChunkIdentifier {
 
     public int getZ() {
         return z;
+    }
+
+    public BlockPos getPosition() {
+        return new BlockPos(x * 16, 0, z * 16);
     }
 
     /**
@@ -49,5 +53,13 @@ public class ChunkIdentifier {
     @Override
     public int hashCode() {
         return Objects.hash(x, z);
+    }
+
+    @Override
+    public String toString() {
+        return "ChunkIdentifier{" +
+                "x=" + x +
+                ", z=" + z +
+                '}';
     }
 }

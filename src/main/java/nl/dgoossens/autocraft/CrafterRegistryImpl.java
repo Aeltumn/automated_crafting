@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class CrafterRegistryImpl extends CrafterRegistry {
     public static final int VERSION = 1;
+
     public CrafterRegistryImpl(JavaPlugin jp) {
         new MainCrafterTick(this, recipeLoader).runTaskTimer(jp, 27, 27);
     }
@@ -67,11 +68,9 @@ public class CrafterRegistryImpl extends CrafterRegistry {
         if(!p.hasPermission("automatedcrafting.makeautocrafters") || type == null)
             return false;
         BlockPos el = new BlockPos(l.getBlockX(), l.getBlockY(), l.getBlockZ());
-        Optional<AutocrafterPositions> m = getAutocrafters(l.getWorld());
-        m.ifPresent(am -> {
-            am.destroy(el); //Destroy old ones
-            am.add(el, type);  //Add the new one
-        });
+        AutocrafterPositions am = getOrCreateAutocrafters(l.getWorld());
+        am.destroy(el); //Destroy old ones
+        am.add(el, type);  //Add the new one
         markDirty();
         return true;
     }

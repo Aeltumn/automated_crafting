@@ -28,10 +28,15 @@ public class CreationListener implements Listener {
      */
     public static boolean isValidBlock(final Block bl, boolean existing) {
         final BlockPos bp = new BlockPos(bl);
-        if(existing && AutomatedCrafting.INSTANCE.getCrafterRegistry().getAutocrafters(bl.getWorld()).map(f -> f.get(bp) != null).orElse(false)) return false;
-        if(ConfigFile.allowDispensers() && bl.getState() instanceof Dispenser) return true;
-        if(ConfigFile.allowHoppers() && bl.getState() instanceof Hopper) return true;
-        return bl.getState() instanceof Dropper;
+
+        //If the block is not any of the allowed states.
+        if((!ConfigFile.allowDispensers() || !(bl.getState() instanceof Dispenser)) &&
+                (!ConfigFile.allowHoppers() || !(bl.getState() instanceof Hopper)) &&
+                !(bl.getState() instanceof Dropper))
+            return false;
+
+        //Test if we can find an autocrafter on this block if applicable.
+        return !existing || AutomatedCrafting.INSTANCE.getCrafterRegistry().getAutocrafters(bl.getWorld()).map(f -> f.get(bp) != null).orElse(false);
     }
 
     //This method specifically is needed because when droppers put the item directly into the neighbouring container the BlockDispenseEvent is not fired.
@@ -84,9 +89,11 @@ public class CreationListener implements Listener {
         if (isValidBlock(bl, true)) {
             AutomatedCrafting.INSTANCE.getCrafterRegistry().destroy(bl.getLocation());
 
-            if (clean) { //Clean should be true when the item is removed from the item frame. (can actually be true at all times but we don't need to update droppers randomly if you're placing down item frames, could break redstone)
-                ((Nameable) bl.getState()).setCustomName(null); //Set the name back to default.
-                bl.getState().update();
+            //Clean should be true when the item is removed from the item frame. (can actually be true at all times but we don't need to update droppers randomly if you're placing down item frames, could break redstone)
+            if (clean) {
+                Container state = (Container) bl.getState();
+                state.setCustomName(null);
+                state.update();
             }
         }
     }
@@ -96,10 +103,13 @@ public class CreationListener implements Listener {
         if (e.getRightClicked().getType().equals(EntityType.ITEM_FRAME)) {
             Block bl = e.getRightClicked().getLocation().getBlock().getRelative(((ItemFrame) e.getRightClicked()).getAttachedFace());
             if (isValidBlock(bl, false)) {
-                if (((ItemFrame) e.getRightClicked()).getItem().getType() != Material.AIR) { //If there's already something in the item frame, cancel!
+                //If there's already something in the item frame, cancel!
+                //This prevents rotating the item in the item frame.
+                if (((ItemFrame) e.getRightClicked()).getItem().getType() != Material.AIR) {
                     e.setCancelled(true);
                     return;
                 }
+                //Wait a second for the item to be put into the frame.
                 new BukkitRunnable() {
                     public void run() {
                         ItemStack item = ((ItemFrame) e.getRightClicked()).getItem();
@@ -107,12 +117,14 @@ public class CreationListener implements Listener {
 
                         //Only rename if we have a valid item that we can craft in there.
                         if(AutomatedCrafting.INSTANCE.getCrafterRegistry().checkBlock(bl.getLocation(), e.getPlayer())) {
-                            //The dropper is named autocrafter is it has an item frame AND there's an item in the item frame. If the item frame is empty the name should be Dropper.
-                            ((Nameable) bl.getState()).setCustomName("Autocrafter"); //Rename it to autocrafter to make this clear to the player.
-                            bl.getState().update();
+                            //The block is named autocrafter is it has an item frame AND there's an item in the item frame. If the item frame is empty the name should be reset.
+                            //Rename it to autocrafter to make this clear to the player.
+                            Container state = (Container) bl.getState();
+                            state.setCustomName("Autocrafter");
+                            state.update();
                         }
                     }
-                }.runTaskLater(AutomatedCrafting.INSTANCE, 1); //Wait a second for the item to be put into the frame.
+                }.runTaskLater(AutomatedCrafting.INSTANCE, 1);
             }
         }
     }

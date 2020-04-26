@@ -9,17 +9,12 @@ import java.lang.reflect.Method;
 
 public class JsonItem {
     private String item;
-    private transient Material material;
     private int count;
+    private String tag;
 
-    private int data; //1.12 only
-    private String tag; //1.14+ only
+    // cached value
+    private transient Material material;
 
-    //1.12 only
-    private static final Class<?> block = ReflectionHelper.getNMSClass("Block");
-    private static final Class<?> itemClass = ReflectionHelper.getNMSClass("Item");
-
-    //1.13+ only
     private static transient Class<?> tagClass = null;
     private static transient Method tagMethod = null, getTagMethod = null;
     static {
@@ -27,7 +22,11 @@ public class JsonItem {
             tagClass = Class.forName("org.bukkit.Tag");
             getTagMethod = Bukkit.class.getMethod("getTag", String.class, NamespacedKey.class, Class.class);
             tagMethod = tagClass.getMethod("isTagged", Object.class);
-        } catch(Exception x) { } //Tags don't exist before 1.14.
+        } catch(Exception ignored) {}
+    }
+
+    public int getCount() {
+        return count;
     }
 
     /**
@@ -47,9 +46,6 @@ public class JsonItem {
             }
             return false;
         } else {
-            //See if data is correct but only on 1.12 as durability is weird on 1.13+
-            if(MinecraftVersion.get() == MinecraftVersion.TWELVE && it.getDurability() != data) return false;
-
             //Check material
             Material mat = getMaterial();
             return it.getType().equals(mat);
@@ -61,25 +57,7 @@ public class JsonItem {
      */
     private Material getMaterial() {
         if(material != null) return material;
-        if (MinecraftVersion.get().atLeast(MinecraftVersion.THIRTEEN))
-            material = Material.getMaterial(item.substring("minecraft:".length()).toUpperCase());
-        else {
-            try {
-                Method m = Material.class.getMethod("getMaterial", int.class);
-                m.setAccessible(true);
-                try {
-                    material = (Material) m.invoke(null, (int) block.getMethod("getId", block).invoke(null, block.getMethod("getByName", String.class).invoke(null, item)));
-                } catch (Exception ignored) {
-                }
-                if (material == null || material == Material.AIR) {
-                    try {
-                        material = (Material) m.invoke(null, (int) itemClass.getMethod("getId", itemClass).invoke(null, itemClass.getMethod("b", String.class).invoke(null, item)));
-                    } catch (Exception ignored) {
-                    }
-                }
-            } catch (Exception ignored) {
-            }
-        }
+        material = Material.getMaterial((item.startsWith("minecraft:") ? item.substring("minecraft:".length()) : item).toUpperCase());
         return material;
     }
 
@@ -88,6 +66,6 @@ public class JsonItem {
      */
     public ItemStack toStack() {
         //We ignore the tag here as tags can't have materials.
-        return new ItemStack(getMaterial(), count, (short) data);
+        return new ItemStack(getMaterial(), count);
     }
 }

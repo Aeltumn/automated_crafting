@@ -47,7 +47,7 @@ public class AutocrafterPositions {
     @Nullable
     public ItemStack get(BlockPos position) {
         ChunkIdentifier ci = new ChunkIdentifier(position);
-        long l = Autocrafter.getPositionLong(position);
+        long l = position.subtract(ci.getPosition()).toLong();
         if(data.containsKey(ci)) {
             //Find the autocrafter that has this position long as its position
             for(Autocrafter a : data.get(ci)) {
@@ -62,7 +62,8 @@ public class AutocrafterPositions {
      * Adds a new autocrafter to this data object.
      */
     public void add(BlockPos position, ItemStack item) {
-        data.computeIfAbsent(new ChunkIdentifier(position), (a) -> new ArrayList<>()).add(new Autocrafter(position, item));
+        ChunkIdentifier ci = new ChunkIdentifier(position);
+        data.computeIfAbsent(ci, (a) -> new ArrayList<>()).add(new Autocrafter(position.subtract(ci.getPosition()), item));
     }
 
     /**
@@ -81,12 +82,11 @@ public class AutocrafterPositions {
         ChunkIdentifier ci = new ChunkIdentifier(position);
         if(!data.containsKey(ci)) return; //No data on this chunk means we can't destroy it to begin with
         ArrayList<Autocrafter> crafters = new ArrayList<>(data.get(ci));
+        long l = position.subtract(ci.getPosition()).toLong();
+        System.out.println("Removing "+l+" from "+data);
 
-        //Remove autocrafters on this block from the list
-        short x = (short) (position.getX() & 0xF);
-        short y = (short) (position.getY() & 0xF);
-        short z = (short) (position.getZ() & 0xF);
-        crafters.removeIf(a -> a.equals(x, y, z));
+        //Remove existing autocrafters on this block from the list
+        crafters.removeIf(a -> a.getPositionAsLong() == l);
 
         //Put data back into crafters map
         if(crafters.isEmpty()) data.remove(ci);
