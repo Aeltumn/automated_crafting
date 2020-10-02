@@ -1,5 +1,8 @@
 package nl.dgoossens.autocraft.api;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import nl.dgoossens.autocraft.helpers.ReflectionHelper;
 import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
@@ -8,10 +11,16 @@ import org.bukkit.inventory.ItemStack;
 import java.util.ArrayList;
 
 public interface CraftingRecipe {
-    static final Class<?> craftItemStack = ReflectionHelper.getOptionalBukkitClass("inventory.CraftItemStack").orElse(null);
-    static final Class<?> iMaterial = ReflectionHelper.getOptionalNMSClass("IMaterial").orElse(null);
-    static final Class<?> itemStack = ReflectionHelper.getOptionalNMSClass("ItemStack").orElse(null);
-    static final Class<?> item = ReflectionHelper.getOptionalNMSClass("Item").orElse(null);
+    Class<?> craftItemStack = ReflectionHelper.getOptionalBukkitClass("inventory.CraftItemStack").orElse(null);
+    Class<?> iMaterial = ReflectionHelper.getOptionalNMSClass("IMaterial").orElse(null);
+    Class<?> itemStack = ReflectionHelper.getOptionalNMSClass("ItemStack").orElse(null);
+    Class<?> item = ReflectionHelper.getOptionalNMSClass("Item").orElse(null);
+    Method asNMSCopyMethod = ReflectionHelper.getOptionalMethod(craftItemStack, "asNMSCopy", ItemStack.class).orElse(null);
+    Method asCraftMirrorMethod = ReflectionHelper.getOptionalMethod(craftItemStack, "asCraftMirror", itemStack).orElse(null);
+    Field itemField = ReflectionHelper.getOptionalField(itemStack, "item").orElse(null);
+    Field craftingResultField = ReflectionHelper.getOptionalField(item, "craftingResult").orElse(null);
+    Constructor<?> iMaterialConstructor = ReflectionHelper.getOptionalConstructor(itemStack, iMaterial).orElse(null);
+    Constructor<?> itemConstructor = ReflectionHelper.getOptionalConstructor(itemStack, item).orElse(null);
 
     /**
      * The type of this recipe.
@@ -47,13 +56,13 @@ public interface CraftingRecipe {
      *
      * Returns null if nothing/air is the container item.
      */
-    public default ItemStack getContainerItem(ItemStack input) {
+    default ItemStack getContainerItem(ItemStack input) {
         try {
-            Object nmsStack = craftItemStack.getMethod("asNMSCopy", ItemStack.class).invoke(null, input);
-            Object craftingResult = ReflectionHelper.getField(item, ReflectionHelper.getField(itemStack, nmsStack, "item"), "craftingResult");
-            // since 1.15 we have IMaterial
-            Object stack = iMaterial != null ? itemStack.getConstructor(iMaterial).newInstance(craftingResult) : itemStack.getConstructor(item).newInstance(craftingResult);
-            ItemStack i = (ItemStack) craftItemStack.getMethod("asCraftMirror", itemStack).invoke(null, stack);
+            Object nmsStack = asNMSCopyMethod.invoke(null, input);
+            Object craftingResult = craftingResultField.get(itemField.get(nmsStack));
+            // since 1.15 we have IMaterial so we need to use a different constructor
+            Object stack = iMaterial != null ? iMaterialConstructor.newInstance(craftingResult) : itemConstructor.newInstance(craftingResult);
+            ItemStack i = (ItemStack) asCraftMirrorMethod.invoke(null, stack);
             if(i == null || i.getType() == Material.AIR) return null;
             else return i;
         } catch(Exception x) {

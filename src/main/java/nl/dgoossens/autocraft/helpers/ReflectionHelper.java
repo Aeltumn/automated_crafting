@@ -1,12 +1,11 @@
 package nl.dgoossens.autocraft.helpers;
 
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.Optional;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 
 public final class ReflectionHelper {
     private static String version = null; //`v1_12_R1`
@@ -135,9 +134,28 @@ public final class ReflectionHelper {
     }
 
     /**
-     * Gets a method in a certain class.
-     * Gets the declared method so this will work with private methods.
-     * (private's just a suggestion anyways, not?)
+     * Gets a declared field in a certain class.
+     */
+    public static Field getField(Class<?> klass, String fieldName) throws NoSuchFieldException {
+        Field f = klass.getDeclaredField(fieldName);
+        f.setAccessible(true);
+        return f;
+    }
+
+    /**
+     * Gets a declared field in a certain class.
+     * <p>
+     * Will return an empty optional if errors occur.
+     */
+    public static Optional<Field> getOptionalField(Class<?> klass, String fieldName) {
+        try {
+            return Optional.of(getField(klass, fieldName));
+        } catch (Exception ignored) {}
+        return Optional.empty();
+    }
+
+    /**
+     * Gets a declared method in a certain class.
      */
     public static Method getMethod(Class<?> klass, String methodName, Class<?>... parameters) throws NoSuchMethodException {
         Method f = klass.getDeclaredMethod(methodName, parameters);
@@ -146,18 +164,14 @@ public final class ReflectionHelper {
     }
 
     /**
-     * Gets a method in a certain class.
-     * Gets the declared method so this will work with private methods.
-     * (private's just a suggestion anyways, not?)
+     * Gets a declared method in a certain class.
      * <p>
      * Will return an empty optional if errors occur.
      */
     public static Optional<Method> getOptionalMethod(Class<?> klass, String methodName, Class<?>... parameters) {
         try {
-            Method f = klass.getDeclaredMethod(methodName, parameters);
-            f.setAccessible(true);
-            return Optional.ofNullable(f);
-        } catch (Exception x) {}
+            return Optional.of(getMethod(klass, methodName, parameters));
+        } catch (Exception ignored) {}
         return Optional.empty();
     }
 
@@ -181,20 +195,18 @@ public final class ReflectionHelper {
      */
     public static <T> Optional<Constructor<T>> getOptionalConstructor(Class<T> klass, Class<?>... parameters) {
         try {
-            Constructor<T> f = klass.getDeclaredConstructor(parameters);
-            f.setAccessible(true);
-            return Optional.ofNullable(f);
-        } catch (Exception x) {}
+            return Optional.of(getConstructor(klass, parameters));
+        } catch (Exception ignored) {}
         return Optional.empty();
     }
 
     /**
      * Gets a field in a certain class from a given object instance.
      * This is handy when the object extends or implements the class in
-     * which case {@link #getField(Object, String)} wouldn't work because the
+     * which case {@link #getFieldValue(Object, String)} wouldn't work because the
      * object's class doesn't contain the field.
      */
-    public static Object getField(Class<?> klass, Object object, String fieldName) throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
+    public static Object getFieldValue(Class<?> klass, Object object, String fieldName) throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
         Field f = klass.getDeclaredField(fieldName);
         f.setAccessible(true);
         return f.get(object);
@@ -203,18 +215,18 @@ public final class ReflectionHelper {
     /**
      * Gets a field from an object's class.
      */
-    public static Object getField(Object object, String fieldName) throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
+    public static Object getFieldValue(Object object, String fieldName) throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
         if (object == null) return null;
-        return getField(object.getClass(), object, fieldName);
+        return getFieldValue(object.getClass(), object, fieldName);
     }
 
     /**
      * Sets a field in a certain class from a given object instance.
      * This is handy when the object extends or implements the class in
-     * which case {@link #setField(Object, String, Object)} wouldn't work because the
+     * which case {@link #setFieldValue(Object, String, Object)} wouldn't work because the
      * object's class doesn't contain the field.
      */
-    public static void setField(Class<?> klass, Object object, String fieldName, Object fieldValue) throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
+    public static void setFieldValue(Class<?> klass, Object object, String fieldName, Object fieldValue) throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
         Field f = klass.getDeclaredField(fieldName);
         f.setAccessible(true);
         f.set(object, fieldValue);
@@ -223,7 +235,7 @@ public final class ReflectionHelper {
     /**
      * Set a field's value in the object's class.
      */
-    public static void setField(Object object, String fieldName, Object fieldValue) throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
-        setField(object.getClass(), object, fieldName, fieldValue);
+    public static void setFieldValue(Object object, String fieldName, Object fieldValue) throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
+        setFieldValue(object.getClass(), object, fieldName, fieldValue);
     }
 }

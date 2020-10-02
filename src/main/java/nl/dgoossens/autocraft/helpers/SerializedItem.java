@@ -18,19 +18,12 @@ public final class SerializedItem implements Serializable {
     private static final Class<?> mojangsonParser = ReflectionHelper.getOptionalNMSClass("MojangsonParser").orElse(null);
     private static final Class<?> nbtTagCompound = ReflectionHelper.getOptionalNMSClass("NBTTagCompound").orElse(null);
     private static final Class<?> itemStack = ReflectionHelper.getOptionalNMSClass("ItemStack").orElse(null);
-    private static Method parseMethod, asNMSCopyMethod, hasTagMethod, getTagMethod, setTagMethod, asCraftMirrorMethod;
-    static {
-        try {
-            parseMethod = mojangsonParser.getMethod("parse",String.class);
-            asNMSCopyMethod = craftItemStack.getMethod("asNMSCopy", ItemStack.class);
-            hasTagMethod = itemStack.getMethod("hasTag");
-            getTagMethod = itemStack.getMethod("getTag");
-            setTagMethod = itemStack.getMethod("setTag", nbtTagCompound);
-            asCraftMirrorMethod = craftItemStack.getMethod("asCraftMirror", itemStack);
-        } catch(Exception exe) {
-            exe.printStackTrace();
-        }
-    }
+    private static final Method parseMethod = ReflectionHelper.getOptionalMethod(mojangsonParser, "parse", String.class).orElse(null);
+    private static final Method asNMSCopyMethod = ReflectionHelper.getOptionalMethod(craftItemStack, "asNMSCopy", ItemStack.class).orElse(null);
+    private static final Method hasTagMethod = ReflectionHelper.getOptionalMethod(itemStack, "hasTag").orElse(null);
+    private static final Method getTagMethod = ReflectionHelper.getOptionalMethod(itemStack, "getTag").orElse(null);
+    private static final Method setTagMethod = ReflectionHelper.getOptionalMethod(itemStack, "setTag", nbtTagCompound).orElse(null);
+    private static final Method asCraftMirrorMethod = ReflectionHelper.getOptionalMethod(craftItemStack, "asCraftMirror", itemStack).orElse(null);
 
     //All other properties of an item are stored in NBT but not material, durability or amount.
     private transient Material materialCache;
