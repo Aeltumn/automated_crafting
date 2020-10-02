@@ -37,7 +37,7 @@ public class AutomatedCrafting extends JavaPlugin {
             return;
         }
 
-        //setup config
+        //Setup config
         saveDefaultConfig();
         reloadConfig();
 
@@ -51,7 +51,7 @@ public class AutomatedCrafting extends JavaPlugin {
         if (command.getName().equalsIgnoreCase("reloadrecipes"))
             new BukkitRunnable() {
                 public void run() {
-                    getRecipeLoader().reload(null);
+                    getRecipeLoader().reload(sender);
                 }
             }.runTaskAsynchronously(this); //Run async for better performance!
         return false;

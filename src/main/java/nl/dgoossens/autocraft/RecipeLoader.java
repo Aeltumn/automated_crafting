@@ -1,15 +1,5 @@
 package nl.dgoossens.autocraft;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
-import com.google.gson.stream.JsonReader;
-import java.io.BufferedReader;
-import java.net.URI;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -18,8 +8,6 @@ import nl.dgoossens.autocraft.api.CraftingRecipe;
 import nl.dgoossens.autocraft.api.RecipeType;
 import nl.dgoossens.autocraft.compat.CustomCraftingCompat;
 import nl.dgoossens.autocraft.helpers.BukkitRecipe;
-import nl.dgoossens.autocraft.helpers.JsonRecipe;
-import nl.dgoossens.autocraft.helpers.ReflectionHelper;
 import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.command.CommandSender;
@@ -28,14 +16,11 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 public class RecipeLoader {
     private final AutomatedCrafting instance;
-    private Set<String> loadedFilenames = new HashSet<>();
-    private Set<CraftingRecipe> loadedRecipes = new HashSet<>();
-    private FileSystem fileSystem;
-    private JsonParser parser;
+    private final Set<CraftingRecipe> loadedRecipes = new HashSet<>();
+    private final Set<String> loadedFilenames = new HashSet<>();
 
     public RecipeLoader(final AutomatedCrafting inst) {
         instance = inst;
-        parser = new JsonParser();
 
         //We load the recipes once on start, this is all we do on 1.12.
         new BukkitRunnable() {
@@ -72,49 +57,18 @@ public class RecipeLoader {
     }
 
     /**
-     * Reloads all recipes from the minecraft jar and otherwise from bukkit.
+     * Reloads all recipes from the minecraft jar and otherwise from Bukkit.
      */
     protected void reload(final CommandSender listener) {
         if (listener != null)
             listener.sendMessage("(Re)loading recipes...");
         instance.getLogger().info("(Re)loading recipes...");
+
+        long t = System.currentTimeMillis();
         loadedRecipes.clear();
         loadedFilenames.clear();
-        long t = System.currentTimeMillis();
 
-        //Load from Minecraft's assets/data package
-        if (ConfigFile.enableJsonLoading()) {
-            if (ReflectionHelper.getVersion().startsWith("v1_12"))
-                throw new UnsupportedOperationException("The json loading system does not work on Minecraft 1.12.");
-            try {
-                if (fileSystem == null) {
-                    URI uri = Bukkit.class.getResource("/assets/.mcassetsroot").toURI();
-                    try {
-                        fileSystem = FileSystems.getFileSystem(uri);
-                    } catch (Exception x) {
-                        fileSystem = FileSystems.newFileSystem(uri, Collections.emptyMap());
-                    }
-                }
-                Path path = fileSystem.getPath("/data/minecraft/recipes");
-                searchFolder(path);
-            } catch (Exception x) {
-                x.printStackTrace();
-            }
-        }
-
-        //Check if we loaded anything this iteration
-        long j = loadedRecipes.size();
-        if (j > 0) {
-            if (listener != null)
-                listener.sendMessage("(Re)loaded " + j + " vanilla recipes, took " + (System.currentTimeMillis() - t) + " ms...");
-            instance.getLogger().info("(Re)loaded " + j + " vanilla recipes, took " + (System.currentTimeMillis() - t) + " ms...");
-        }
-
-        //Set up for next iteration
-        t = System.currentTimeMillis();
-        j = loadedRecipes.size();
-
-        //Load recipes from bukkit, skip any that we already know.
+        //Load recipes from Bukkit, skip any that we already know.
         Iterator<org.bukkit.inventory.Recipe> it = Bukkit.recipeIterator();
         while (it.hasNext()) {
             org.bukkit.inventory.Recipe bukkitRecipe = it.next();
@@ -130,7 +84,7 @@ public class RecipeLoader {
         }
 
         //Check if something was loaded this iteration
-        j = loadedRecipes.size() - j;
+        long j = loadedRecipes.size();
         if (j > 0) {
             if (listener != null)
                 listener.sendMessage("(Re)loaded " + j + " bukkit recipes, took " + (System.currentTimeMillis() - t) + " ms...");
@@ -139,7 +93,6 @@ public class RecipeLoader {
 
         //Set up for next iteration
         t = System.currentTimeMillis();
-        j = loadedRecipes.size();
 
         //Custom compatibility
         if (Bukkit.getPluginManager().isPluginEnabled("CustomCrafting"))
@@ -152,72 +105,5 @@ public class RecipeLoader {
                 listener.sendMessage("(Re)loaded " + j + " custom recipes from compatible plugins, took " + (System.currentTimeMillis() - t) + " ms...");
             instance.getLogger().info("(Re)loaded " + j + " custom recipes from compatible plugins, took " + (System.currentTimeMillis() - t) + " ms...");
         }
-    }
-
-    /**
-     * Automatically walks through the folder at the path
-     * and loads all files in it.
-     */
-    @Deprecated
-    private void searchFolder(final Path path) throws Exception {
-        if (path == null) return;
-        //We use none match here as it stops the moment one does match. (when we get an exception)
-        Files.walk(path).noneMatch(this::loadFile);
-    }
-
-    /**
-     * Loads a single file at a path.
-     * This is passed as a Path instead of a File because
-     * we also use this to load .json files as resources from
-     * within the jar if it's 1.12 and we're loading the recipes
-     * from the /assets/ directory.
-     *
-     * @return true if an exception occurred
-     */
-    @Deprecated
-    private boolean loadFile(final Path file) {
-        if (!file.toString().endsWith(".json")) return false;
-        if (loadedFilenames.contains(file.getFileName().toString()))
-            return false; //Don't load the same filename twice! (allows overwriting)
-        try {
-            final BufferedReader bufferedReader = new BufferedReader(Files.newBufferedReader(file));
-            final JsonReader reader = new JsonReader(bufferedReader);
-            loadReader(reader);
-            reader.close();
-            loadedFilenames.add(file.getFileName().toString());
-        } catch (Exception x) {
-            x.printStackTrace();
-
-            AutomatedCrafting.getInstance().getLogger().warning("Failed to load file " + file.getFileName().toString() + "! Here's a printout of the file:");
-            //Print file to console
-            try {
-                final BufferedReader bufferedReader = new BufferedReader(Files.newBufferedReader(file));
-                while (bufferedReader.ready())
-                    System.out.println(bufferedReader.readLine());
-                bufferedReader.close();
-            } catch (Exception ignored) { }
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Loads a single recipe from a JsonReader.
-     */
-    @Deprecated
-    private void loadReader(final JsonReader reader) throws Exception {
-        JsonElement obj = parser.parse(reader);
-        if (!obj.isJsonObject()) return;
-        if (!obj.getAsJsonObject().has("type")) return;
-        String type = obj.getAsJsonObject().get("type").getAsString();
-
-        //On 1.12 there wasn't a minecraft: prefix yet
-        if (type.startsWith("minecraft:")) type = type.substring("minecraft:".length());
-
-        //if it's not shaped or shapeless we don't want it!
-        if (!type.equalsIgnoreCase("crafting_shaped") && !type.equalsIgnoreCase("crafting_shapeless")) return;
-
-        //Add to loaded recipes list
-        loadedRecipes.add(AutomatedCrafting.GSON.fromJson(obj, JsonRecipe.class));
     }
 }

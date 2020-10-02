@@ -249,25 +249,22 @@ public class BukkitRecipe implements CraftingRecipe {
     }
 
     public int takeFromInventory(Inventory inv, ItemStack item, int limit) {
-        if (item == null) {
-            return limit;
-        } else {
+        if (item != null) {
             ItemStack[] its;
             int l = (its = inv.getStorageContents()).length;
 
-            for(int j = 0; j < l; ++j) {
+            for (int j = 0; j < l; ++j) {
                 ItemStack i = its[j];
                 if (item.isSimilar(i)) {
                     int cap = Math.min(limit, i.getAmount());
                     i.setAmount(i.getAmount() - cap);
-                    //TODO check if clearing the slot does what I assume it does.
-                    if(i.getAmount() == 0) inv.clear(j); //Clear the slot
+                    if (i.getAmount() == 0) inv.setItem(j, null);
                     return limit - cap;
                 }
             }
 
-            return limit;
         }
+        return limit;
     }
 
     @Override

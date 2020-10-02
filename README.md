@@ -1,5 +1,5 @@
 # Automated Crafting
-An open-source plugin for Spigot 1.12 through 1.15 which adds powerful autocrafters capable of automatically crafting anything. With a configuration to allow further customisation like increasing the difficulty of obtaining the autocrafters.
+An open-source plugin for Spigot 1.12 through 1.16 which adds powerful autocrafters capable of automatically crafting anything. With a configuration to allow further customisation like increasing the difficulty of obtaining the autocrafters.
 
 <br/>
 
@@ -32,7 +32,6 @@ An open-source plugin for Spigot 1.12 through 1.15 which adds powerful autocraft
 **Other Features**
 - Autocrafters will put the items in the container on the block the dropper is facing towards, otherwise the item will be dropped.
 - Powering the dropper makes it stop automatically crafting. (locking the dropper also has this effect)
-- Recipes are loaded as efficiently as possible depending on the minecraft version you're using.
 
 <br/> <br/>
 
