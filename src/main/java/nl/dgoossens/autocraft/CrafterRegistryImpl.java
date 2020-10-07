@@ -104,9 +104,9 @@ public class CrafterRegistryImpl extends CrafterRegistry {
                     String n = jr.nextName();
                     LegacyBlockPos lbp = g.fromJson(jr, LegacyBlockPos.class);
                     ItemStack it = AutomatedCrafting.GSON.fromJson(n, LegacySerializedItem.class).getItem();
-                    AutocrafterPositions m = new AutocrafterPositions();
+                    AutocrafterPositions m = crafters.getOrDefault(lbp.world, new AutocrafterPositions());
                     m.add(new BlockPos(lbp.x, lbp.y, lbp.z), it);
-                    if(!m.isInvalid())
+                    if(!m.isEmpty())
                         crafters.put(lbp.world, m);
                 }
                 jr.endObject();
@@ -152,7 +152,7 @@ public class CrafterRegistryImpl extends CrafterRegistry {
                                 jr.skipValue();
                             }
                             jr.endObject();
-                            break;
+                            continue;
                         }
                         jr.beginObject();
                         while(jr.hasNext()) {
@@ -162,23 +162,24 @@ public class CrafterRegistryImpl extends CrafterRegistry {
                                 l = Long.parseLong(n2);
                             } catch(NumberFormatException ignored) {
                                 jr.skipValue();
-                                break;
+                                continue;
                             }
                             //Update method of saving items to json
-                            m.add(ci, l, AutomatedCrafting.GSON.fromJson(jr.nextString(), SerializedItem.class).getItem());
+                            m.add(ci, l, ((SerializedItem) AutomatedCrafting.GSON.fromJson(jr, SerializedItem.class)).getItem());
                         }
                         jr.endObject();
                     }
                     jr.endObject();
 
                     //If this world has data we add it to the full list
-                    if(!m.isInvalid())
+                    if(!m.isEmpty())
                         crafters.put(world, m);
                 }
                 jr.endObject();
                 jr.close();
                 fr.close();
             } catch (Exception x) {
+                x.printStackTrace();
                 AutomatedCrafting.INSTANCE.warning("An error occurred whilst reading autocrafters from the configuration file. Please rebuild all autocrafters!");
             }
         }
@@ -201,7 +202,7 @@ public class CrafterRegistryImpl extends CrafterRegistry {
             for(String s : getWorldsRegistered()) {
                 Optional<AutocrafterPositions> m = getAutocrafters(s);
                 if(!m.isPresent()) continue;
-                if(m.get().isInvalid()) continue;
+                if(m.get().isEmpty()) continue;
 
                 jw.name(s);
                 jw.beginObject();
