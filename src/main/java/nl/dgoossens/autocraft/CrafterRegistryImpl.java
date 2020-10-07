@@ -30,6 +30,7 @@ public class CrafterRegistryImpl extends CrafterRegistry {
     public static final int VERSION = 1;
 
     public CrafterRegistryImpl(JavaPlugin jp) {
+        super();
         new MainCrafterTick(this, recipeLoader).runTaskTimer(jp, 27, 27);
     }
 

@@ -2,6 +2,7 @@ package nl.dgoossens.autocraft.api;
 
 import nl.dgoossens.autocraft.AutomatedCrafting;
 import nl.dgoossens.autocraft.RecipeLoader;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
@@ -10,6 +11,7 @@ import org.bukkit.inventory.ItemStack;
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import org.bukkit.scheduler.BukkitRunnable;
 
 public abstract class CrafterRegistry {
     private static final long SAVE_DELAY = (150) * 1000; //Wait 2.5 minutes = 150 seconds
@@ -24,6 +26,21 @@ public abstract class CrafterRegistry {
         file = new File(AutomatedCrafting.INSTANCE.getDataFolder(), "autocrafters.json");
 
         load();
+
+        // periodically try to save if the data is marked as dirty
+        Bukkit.getScheduler().runTaskTimer(AutomatedCrafting.INSTANCE, () -> {
+            if (System.currentTimeMillis() > saveTime) {
+                saveTime = Long.MAX_VALUE;
+                forceSave();
+            }
+        }, 40, 40);
+    }
+
+    /**
+     * Returns whether any crafter caused the registry to be marked as dirty.
+     */
+    public boolean isDirty() {
+        return saveTime != Long.MAX_VALUE;
     }
 
     /**

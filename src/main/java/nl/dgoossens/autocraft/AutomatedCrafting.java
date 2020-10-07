@@ -47,6 +47,14 @@ public class AutomatedCrafting extends JavaPlugin {
     }
 
     @Override
+    public void onDisable() {
+        // Save the crafter registry if it's dirty
+        if (registry.isDirty()) {
+            registry.forceSave();
+        }
+    }
+
+    @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (command.getName().equalsIgnoreCase("reloadrecipes"))
             getRecipeLoader().reload(sender);
