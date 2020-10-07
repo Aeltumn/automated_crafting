@@ -151,7 +151,7 @@ public class BukkitRecipe implements CraftingRecipe {
                     x.printStackTrace();
                 }
             } else {
-                ingredients = ((ShapelessRecipe) bukkitRecipe).getIngredientList().parallelStream().map(Collections::singletonList).collect(Collectors.toList());
+                ingredients = ((ShapelessRecipe) bukkitRecipe).getIngredientList().stream().map(Collections::singletonList).collect(Collectors.toList());
             }
         }
     }
@@ -186,7 +186,7 @@ public class BukkitRecipe implements CraftingRecipe {
                         }
 
                         //Try to merge this recipe requirement and otherwise add it
-                        if(!requirements.parallelStream().filter(r -> r.overlap(rr)).map(r -> r.increment(rr.amount)).findAny().isPresent())
+                        if(!requirements.stream().filter(r -> r.overlap(rr)).map(r -> r.increment(rr.amount)).findAny().isPresent())
                             requirements.add(rr);
                     });
                     break;
@@ -195,7 +195,7 @@ public class BukkitRecipe implements CraftingRecipe {
                         RecipeRequirement rr = new RecipeRequirement(i, 1);
 
                         //Try to merge this recipe requirement and otherwise add it
-                        if(!requirements.parallelStream().filter(r -> r.overlap(rr)).map(r -> r.increment(rr.amount)).findAny().isPresent())
+                        if(!requirements.stream().filter(r -> r.overlap(rr)).map(r -> r.increment(rr.amount)).findAny().isPresent())
                             requirements.add(rr);
                     });
                     break;
@@ -225,7 +225,7 @@ public class BukkitRecipe implements CraftingRecipe {
     public ArrayList<ItemStack> takeMaterials(Inventory inv) {
         Set<RecipeRequirement> requirements = getRequirements();
         ArrayList<ItemStack> ret = new ArrayList<>();
-        requirements.parallelStream().forEach(rr -> {
+        requirements.stream().forEach(rr -> {
             int amountToTake = rr.amount;
             //Try each item one by one to see if we can take that item from our inventory.
             for(ItemStack i : rr.item) {
@@ -249,22 +249,22 @@ public class BukkitRecipe implements CraftingRecipe {
     }
 
     public int takeFromInventory(Inventory inv, ItemStack item, int limit) {
+        int ret = limit;
         if (item != null) {
-            ItemStack[] its;
-            int l = (its = inv.getStorageContents()).length;
-
-            for (int j = 0; j < l; ++j) {
+            ItemStack[] its = inv.getStorageContents();
+            for (int j = 0; j < its.length; ++j) {
                 ItemStack i = its[j];
                 if (item.isSimilar(i)) {
-                    int cap = Math.min(limit, i.getAmount());
-                    i.setAmount(i.getAmount() - cap);
-                    if (i.getAmount() == 0) inv.setItem(j, null);
-                    return limit - cap;
+                    int cap = Math.min(ret, i.getAmount());
+                    if (i.getAmount() - cap <= 0) inv.setItem(j, null);
+                    else i.setAmount(i.getAmount() - cap);
+                    ret -= cap;
+                    if (ret <= 0) return ret;
                 }
             }
 
         }
-        return limit;
+        return ret;
     }
 
     @Override
@@ -310,7 +310,7 @@ public class BukkitRecipe implements CraftingRecipe {
         private boolean overlap(RecipeRequirement other) {
             for(ItemStack i : item) {
                 //If any item items overlap between the two we call them overlapping.
-                if(other.item.parallelStream().anyMatch(j -> j.isSimilar(i))) {
+                if(other.item.stream().anyMatch(j -> j.isSimilar(i))) {
                     if(item.size() != other.item.size())
                         AutomatedCrafting.getInstance().warning("A recipe incorrectly merged two recipe requirements, please make sure in recipes no two slots are allowed to contain the same item unless they are fully identical. E.g. don't have a shapeless recipe with paper and paper or leather.");
                     return true;
@@ -323,7 +323,7 @@ public class BukkitRecipe implements CraftingRecipe {
             int amountToFind = amount;
             for(ItemStack it : itemList) {
                 //If any item in our array of valid items is similar to this item we have found our match.
-                if (item.parallelStream().anyMatch(f -> f.isSimilar(it))) {
+                if (item.stream().anyMatch(f -> f.isSimilar(it))) {
                     int cap = Math.min(it.getAmount(), amountToFind);
                     it.setAmount(it.getAmount() - cap); //Decrease item by amount so we can use it again for the next item.
                     amountToFind -= cap;

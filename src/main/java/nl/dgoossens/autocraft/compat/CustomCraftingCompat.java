@@ -31,7 +31,7 @@ public class CustomCraftingCompat implements CompatClass {
             } else if (cr instanceof ShapelessCraftRecipe) {
                 Map<Character, List<CustomItem>> m = ((ShapelessCraftRecipe) cr).getIngredients();
                 loadedRecipes.add(new BukkitRecipe(cr.getCustomResult().create(),
-                        m.entrySet().parallelStream().map(this::parseIntoItemStacks).collect(Collectors.toList())));
+                        m.entrySet().stream().map(this::parseIntoItemStacks).collect(Collectors.toList())));
             }
         }
         return loadedRecipes;

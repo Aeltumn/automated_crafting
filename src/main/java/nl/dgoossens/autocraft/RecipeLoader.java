@@ -49,7 +49,7 @@ public class RecipeLoader {
      * has a displayname and the recipe result does not the recipe will not be returned!
      */
     public Set<CraftingRecipe> getRecipesFor(final ItemStack item) {
-        return loadedRecipes.parallelStream().filter(f -> f.creates(item)).collect(Collectors.toSet());
+        return loadedRecipes.stream().filter(f -> f.creates(item)).collect(Collectors.toSet());
     }
 
     /**
