@@ -23,10 +23,8 @@ A clear and concise description of what you expected to happen.
 If applicable, add screenshots to help explain your problem.
 
 **Version Information**
-Are you using (paper)spigot or sponge?
-What Minecraft version are you running?
-What's the name of your automated_crafting.jar
-What version of Automated Crafting are you using
+What Minecraft/Bukkit version are you running?
+What version of Automated Crafting are you using?
 What versions of dependencies (like CustomCrafting) are being used?
 
 **Additional context**
