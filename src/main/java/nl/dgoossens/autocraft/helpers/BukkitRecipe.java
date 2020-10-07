@@ -279,7 +279,7 @@ public class BukkitRecipe implements CraftingRecipe {
 
     @Override
     public ItemStack getResultDrop() {
-        return result;
+        return result.clone();
     }
 
     /**
@@ -340,14 +340,6 @@ public class BukkitRecipe implements CraftingRecipe {
             }
             return false;
         }
-
-        @Override
-        public String toString() {
-            return "RecipeRequirement{" +
-                    "item=" + item.stream().map(f -> f.serialize().toString()).collect(Collectors.joining(", ")) +
-                    ", amount=" + amount +
-                    '}';
-        }
     }
 
     /**
@@ -358,8 +350,8 @@ public class BukkitRecipe implements CraftingRecipe {
         // Documentation is a bit vague but it appears ingredients with -1 mean
         // the metadata isn't important and it should accept any type. We always
         // pass the ingredient as a so if a has a durability of -1 we only compare
-        // materials.
-        if (a != null && b != null && a.getDurability() == 32767) {
+        // materials. (Bukkit changes -1 to Short.MAX_VALUE)
+        if (a != null && b != null && a.getDurability() == Short.MAX_VALUE) {
             return a.getType() == b.getType();
         }
         return a != null && a.isSimilar(b);

@@ -33,7 +33,7 @@ public interface CraftingRecipe {
     boolean creates(ItemStack stack);
 
     /**
-     * Get the item dropped if the crafting was successfull.
+     * Get the item dropped if the crafting was successful.
      */
     ItemStack getResultDrop();
 

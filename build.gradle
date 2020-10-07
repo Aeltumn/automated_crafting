@@ -14,7 +14,7 @@ sourceCompatibility = 1.8
 compileJava.options.encoding = 'UTF-8'
 
 ext {
-    minecraftVersion = '1.16.3-R0.1-SNAPSHOT'
+    minecraftVersion = '1.12.2-R0.1-SNAPSHOT'
 }
 
 repositories {
