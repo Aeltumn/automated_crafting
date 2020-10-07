@@ -112,6 +112,7 @@ public class CrafterRegistryImpl extends CrafterRegistry {
                 jr.endObject();
                 jr.close();
                 fr.close();
+                AutomatedCrafting.INSTANCE.info("Loaded autocrafters from legacy configuration file!");
             } catch (Exception x) {
                 AutomatedCrafting.INSTANCE.warning("An error occurred whilst legacy loading autocrafters from an old configuration file. Please rebuild all autocrafters!");
             }
@@ -184,12 +185,15 @@ public class CrafterRegistryImpl extends CrafterRegistry {
             }
         }
 
-        if(legacyLoaded)
-            markDirty();
+        if(legacyLoaded) {
+            forceSave();
+        }
     }
 
     @Override
     public void forceSave() {
+        saveTime = Long.MAX_VALUE;
+
         try {
             if (!file.exists()) file.createNewFile();
             FileWriter fw = new FileWriter(file);

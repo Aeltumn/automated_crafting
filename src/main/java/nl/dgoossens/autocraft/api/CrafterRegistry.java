@@ -30,7 +30,6 @@ public abstract class CrafterRegistry {
         // periodically try to save if the data is marked as dirty
         Bukkit.getScheduler().runTaskTimer(AutomatedCrafting.INSTANCE, () -> {
             if (System.currentTimeMillis() > saveTime) {
-                saveTime = Long.MAX_VALUE;
                 forceSave();
             }
         }, 40, 40);
