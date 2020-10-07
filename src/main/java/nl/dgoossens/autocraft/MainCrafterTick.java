@@ -13,6 +13,7 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.Container;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.DirectionalContainer;
@@ -61,37 +62,33 @@ public class MainCrafterTick extends BukkitRunnable {
                             if (!recipe.containsRequirements(container.getInventory()))
                                 continue;
 
+                            final DirectionalContainer dispenser = (DirectionalContainer) bl.getState().getData();
+                            final Location loc = bl.getLocation().getBlock().getRelative(dispenser.getFacing()).getLocation();
+
+                            //Check if there's a container being output into and if it can fit the
+                            //items to put in.
+                            if (loc.getBlock().getState() instanceof InventoryHolder) {
+                                InventoryHolder c = (InventoryHolder) loc.getBlock().getState();
+                                ItemStack i = recipe.getResultDrop();
+                                if (i.getType() != Material.AIR && !canInventorySupport(c.getInventory(), i))
+                                    continue;
+                            }
+
                             //Take the materials we need for the craft from the crafter
                             ArrayList<ItemStack> leftovers = recipe.takeMaterials(container.getInventory());
 
-                            //Put leftovers back into the inventory and otherwise drop them
-                            HashMap<Integer, ItemStack> leftoversToDrop = container.getInventory().addItem(leftovers.toArray(new ItemStack[0]));
-                            if (!leftoversToDrop.isEmpty() && bl.getWorld() != null) {
-                                leftoversToDrop.forEach((k, v) -> {
-                                    if (v == null || v.getType() == Material.AIR) return; //Can't drop this
-                                    v.setAmount(k);
-                                    bl.getWorld().dropItem(bl.getLocation().clone().add(0.5, 1.25, 0.5), v);
-                                });
-                            }
+                            //Put leftovers back into the inventory, we'll assume it always fits
+                            container.getInventory().addItem(leftovers.toArray(new ItemStack[0]));
 
-                            //Check if there's a container nearby that wants the data.
-                            final DirectionalContainer dispenser = (DirectionalContainer) bl.getState().getData();
-                            final Location loc = bl.getLocation().getBlock().getRelative(dispenser.getFacing()).getLocation();
+                            //Check if there's a container nearby that wants the output.
+                            //This could never trigger if we didn't have enough space in the holder
+                            //as that would have caused this recipe to be discarded earlier.
                             if (loc.getBlock().getState() instanceof InventoryHolder) {
                                 InventoryHolder c = (InventoryHolder) loc.getBlock().getState();
                                 ItemStack i = recipe.getResultDrop();
                                 if (i.getType() != Material.AIR) {
-                                    HashMap<Integer, ItemStack> couldntFit = c.getInventory().addItem(i);
-                                    //Drop what couldn't fit
-                                    if (!couldntFit.isEmpty() && loc.getWorld() != null) {
-                                        couldntFit.forEach((k, v) -> {
-                                            if (v == null || v.getType() == Material.AIR) return; //Can't drop this
-                                            v.setAmount(k);
-                                            loc.getWorld().dropItem(loc.clone().add(0.5, 0.25, 0.5), v);
-                                        });
-                                    }
+                                    c.getInventory().addItem(i);
                                 }
-                                // If we get here we found an inventory holder so we don't drop an item.
                                 break;
                             }
 
@@ -107,5 +104,29 @@ public class MainCrafterTick extends BukkitRunnable {
                 }
             });
         }
+    }
+
+    /**
+     * Returns whether we can still fit itemstack it into an inventory.
+     */
+    private boolean canInventorySupport(Inventory inv, ItemStack it) {
+        if (it == null || it.getType() == Material.AIR) return true;
+
+        ItemStack[] storage = inv.getStorageContents();
+        int amountToDeposit = it.getAmount();
+        for (int i = 0; i < storage.length; i++) {
+            if (storage[i] == null) return true;
+
+            ItemStack ite = storage[i];
+            if (ite.isSimilar(it)) {
+                // Remove how much we can still fit on stack from the amount to
+                // deposit
+                amountToDeposit -= (ite.getMaxStackSize() - ite.getAmount());
+
+                // If we deposited everything we fit it in.
+                if (amountToDeposit <= 0) return true;
+            }
+        }
+        return false;
     }
 }
