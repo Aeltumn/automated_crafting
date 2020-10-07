@@ -242,10 +242,10 @@ public class CrafterRegistryImpl extends CrafterRegistry {
 
     //Used for legacy loading of old data files.
     public static class LegacySerializedItem {
-        private static final Class<?> mojangsonParser = ReflectionHelper.getNMSClass("MojangsonParser");
-        private static final Class<?> craftItemStack = ReflectionHelper.getBukkitClass("inventory.CraftItemStack");
-        private static final Class<?> nbtTagCompound = ReflectionHelper.getNMSClass("NBTTagCompound");
-        private static final Class<?> itemStack = ReflectionHelper.getNMSClass("ItemStack");
+        private static final Class<?> mojangsonParser = ReflectionHelper.getNMSClass("MojangsonParser").orElse(null);
+        private static final Class<?> craftItemStack = ReflectionHelper.getCraftBukkitClass("inventory.CraftItemStack").orElse(null);
+        private static final Class<?> nbtTagCompound = ReflectionHelper.getNMSClass("NBTTagCompound").orElse(null);
+        private static final Class<?> itemStack = ReflectionHelper.getNMSClass("ItemStack").orElse(null);
 
         private Map<String, Object> item;
         private Map<String, Object> meta;

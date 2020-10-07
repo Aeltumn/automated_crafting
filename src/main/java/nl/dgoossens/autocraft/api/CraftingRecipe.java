@@ -11,16 +11,16 @@ import org.bukkit.inventory.ItemStack;
 import java.util.ArrayList;
 
 public interface CraftingRecipe {
-    Class<?> craftItemStack = ReflectionHelper.getOptionalBukkitClass("inventory.CraftItemStack").orElse(null);
-    Class<?> iMaterial = ReflectionHelper.getOptionalNMSClass("IMaterial").orElse(null);
-    Class<?> itemStack = ReflectionHelper.getOptionalNMSClass("ItemStack").orElse(null);
-    Class<?> item = ReflectionHelper.getOptionalNMSClass("Item").orElse(null);
-    Method asNMSCopyMethod = ReflectionHelper.getOptionalMethod(craftItemStack, "asNMSCopy", ItemStack.class).orElse(null);
-    Method asCraftMirrorMethod = ReflectionHelper.getOptionalMethod(craftItemStack, "asCraftMirror", itemStack).orElse(null);
-    Field itemField = ReflectionHelper.getOptionalField(itemStack, "item").orElse(null);
-    Field craftingResultField = ReflectionHelper.getOptionalField(item, "craftingResult").orElse(null);
-    Constructor<?> iMaterialConstructor = ReflectionHelper.getOptionalConstructor(itemStack, iMaterial).orElse(null);
-    Constructor<?> itemConstructor = ReflectionHelper.getOptionalConstructor(itemStack, item).orElse(null);
+    Class<?> craftItemStack = ReflectionHelper.getNMSClass("inventory.CraftItemStack").orElse(null);
+    Class<?> iMaterial = ReflectionHelper.getNMSClass("IMaterial").orElse(null);
+    Class<?> itemStack = ReflectionHelper.getNMSClass("ItemStack").orElse(null);
+    Class<?> item = ReflectionHelper.getNMSClass("Item").orElse(null);
+    Method asNMSCopyMethod = ReflectionHelper.getMethod(craftItemStack, "asNMSCopy", ItemStack.class).orElse(null);
+    Method asCraftMirrorMethod = ReflectionHelper.getMethod(craftItemStack, "asCraftMirror", itemStack).orElse(null);
+    Field itemField = ReflectionHelper.getField(itemStack, "item").orElse(null);
+    Field craftingResultField = ReflectionHelper.getField(item, "craftingResult").orElse(null);
+    Constructor<?> iMaterialConstructor = ReflectionHelper.getConstructor(itemStack, iMaterial).orElse(null);
+    Constructor<?> itemConstructor = ReflectionHelper.getConstructor(itemStack, item).orElse(null);
 
     /**
      * The type of this recipe.
@@ -59,7 +59,8 @@ public interface CraftingRecipe {
     default ItemStack getContainerItem(ItemStack input) {
         try {
             Object nmsStack = asNMSCopyMethod.invoke(null, input);
-            Object craftingResult = craftingResultField.get(itemField.get(nmsStack));
+            Object item = ReflectionHelper.getFieldValue(nmsStack, itemField).orElse(null);
+            Object craftingResult = ReflectionHelper.getFieldValue(item, craftingResultField).orElse(null);
             // since 1.15 we have IMaterial so we need to use a different constructor
             Object stack = iMaterial != null ? iMaterialConstructor.newInstance(craftingResult) : itemConstructor.newInstance(craftingResult);
             ItemStack i = (ItemStack) asCraftMirrorMethod.invoke(null, stack);

@@ -1,5 +1,6 @@
 package nl.dgoossens.autocraft.helpers;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -40,8 +41,12 @@ public class BukkitRecipe implements CraftingRecipe {
 
     //A few NMS classes we use because 1.12 is outdated and doesn't support cool recipes yet.
     private static final Class<?> recipeChoice = findClass("org.bukkit.inventory.RecipeChoice").orElse(null);
-    private static final Class<?> exactChoice = recipeChoice == null ? null : recipeChoice.getDeclaredClasses()[0];
-    private static final Class<?> materialChoice = recipeChoice == null ? null : recipeChoice.getDeclaredClasses()[1];
+    private static final Class<?> exactChoice = Optional.ofNullable(recipeChoice).map(f -> f.getDeclaredClasses()[0]).orElse(null);
+    private static final Class<?> materialChoice = Optional.ofNullable(recipeChoice).map(f -> f.getDeclaredClasses()[1]).orElse(null);
+
+    private static final Method getChoiceMapMethod = ReflectionHelper.getMethod(ShapedRecipe.class, "getChoiceMap").orElse(null);
+    private static final Method recipeChoiceGetItemStackMethod = ReflectionHelper.getMethod(recipeChoice, "getItemStack").orElse(null);
+    private static final Method getChoiceListMethod = ReflectionHelper.getMethod(ShapelessRecipe.class, "getChoiceList").orElse(null);
 
     //Get a class and put it in an optional.
     private static Optional<Class<?>> findClass(String className) {
@@ -78,7 +83,7 @@ public class BukkitRecipe implements CraftingRecipe {
             if (exactChoice != null) {
                 try {
                     key = new HashMap<>();
-                    Map<Character, Object> choiceMap = (Map<Character, Object>) ShapedRecipe.class.getMethod("getChoiceMap").invoke(bukkitRecipe);
+                    Map<Character, Object> choiceMap = (Map<Character, Object>) getChoiceMapMethod.invoke(bukkitRecipe);
                     choiceMap.forEach((k, v) -> {
                         List<ItemStack> values = new ArrayList<>();
                         if (v != null) { //V can be null for some reason.
@@ -95,7 +100,7 @@ public class BukkitRecipe implements CraftingRecipe {
                             } else {
                                 ItemStack val = null;
                                 try {
-                                    val = (ItemStack) recipeChoice.getMethod("getItemStack").invoke(v);
+                                    val = (ItemStack) recipeChoiceGetItemStackMethod.invoke(v);
                                 } catch (Exception x) {
                                     x.printStackTrace();
                                 }
@@ -121,7 +126,7 @@ public class BukkitRecipe implements CraftingRecipe {
             if (exactChoice != null) {
                 try {
                     ingredients = new ArrayList<>();
-                    List<Object> choiceList = (List<Object>) ShapelessRecipe.class.getMethod("getChoiceList").invoke(bukkitRecipe);
+                    List<Object> choiceList = (List<Object>) getChoiceListMethod.invoke(bukkitRecipe);
                     choiceList.forEach(v -> {
                         List<ItemStack> values = new ArrayList<>();
                         if (v != null) { //V can be null for some reason.
@@ -138,7 +143,7 @@ public class BukkitRecipe implements CraftingRecipe {
                             } else {
                                 ItemStack val = null;
                                 try {
-                                    val = (ItemStack) recipeChoice.getMethod("getItemStack").invoke(v);
+                                    val = (ItemStack) recipeChoiceGetItemStackMethod.invoke(v);
                                 } catch (Exception x) {
                                     x.printStackTrace();
                                 }

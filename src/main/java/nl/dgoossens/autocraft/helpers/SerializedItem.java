@@ -14,16 +14,16 @@ public final class SerializedItem implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private static final Object NULL_OBJECT = null;
-    private static final Class<?> craftItemStack = ReflectionHelper.getOptionalBukkitClass("inventory.CraftItemStack").orElse(null);
-    private static final Class<?> mojangsonParser = ReflectionHelper.getOptionalNMSClass("MojangsonParser").orElse(null);
-    private static final Class<?> nbtTagCompound = ReflectionHelper.getOptionalNMSClass("NBTTagCompound").orElse(null);
-    private static final Class<?> itemStack = ReflectionHelper.getOptionalNMSClass("ItemStack").orElse(null);
-    private static final Method parseMethod = ReflectionHelper.getOptionalMethod(mojangsonParser, "parse", String.class).orElse(null);
-    private static final Method asNMSCopyMethod = ReflectionHelper.getOptionalMethod(craftItemStack, "asNMSCopy", ItemStack.class).orElse(null);
-    private static final Method hasTagMethod = ReflectionHelper.getOptionalMethod(itemStack, "hasTag").orElse(null);
-    private static final Method getTagMethod = ReflectionHelper.getOptionalMethod(itemStack, "getTag").orElse(null);
-    private static final Method setTagMethod = ReflectionHelper.getOptionalMethod(itemStack, "setTag", nbtTagCompound).orElse(null);
-    private static final Method asCraftMirrorMethod = ReflectionHelper.getOptionalMethod(craftItemStack, "asCraftMirror", itemStack).orElse(null);
+    private static final Class<?> craftItemStack = ReflectionHelper.getCraftBukkitClass("inventory.CraftItemStack").orElse(null);
+    private static final Class<?> mojangsonParser = ReflectionHelper.getNMSClass("MojangsonParser").orElse(null);
+    private static final Class<?> nbtTagCompound = ReflectionHelper.getNMSClass("NBTTagCompound").orElse(null);
+    private static final Class<?> itemStack = ReflectionHelper.getNMSClass("ItemStack").orElse(null);
+    private static final Method parseMethod = ReflectionHelper.getMethod(mojangsonParser, "parse", String.class).orElse(null);
+    private static final Method asNMSCopyMethod = ReflectionHelper.getMethod(craftItemStack, "asNMSCopy", ItemStack.class).orElse(null);
+    private static final Method hasTagMethod = ReflectionHelper.getMethod(itemStack, "hasTag").orElse(null);
+    private static final Method getTagMethod = ReflectionHelper.getMethod(itemStack, "getTag").orElse(null);
+    private static final Method setTagMethod = ReflectionHelper.getMethod(itemStack, "setTag", nbtTagCompound).orElse(null);
+    private static final Method asCraftMirrorMethod = ReflectionHelper.getMethod(craftItemStack, "asCraftMirror", itemStack).orElse(null);
 
     //All other properties of an item are stored in NBT but not material, durability or amount.
     private transient Material materialCache;
