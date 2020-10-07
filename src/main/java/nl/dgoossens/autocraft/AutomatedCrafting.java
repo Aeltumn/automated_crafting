@@ -49,11 +49,7 @@ public class AutomatedCrafting extends JavaPlugin {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (command.getName().equalsIgnoreCase("reloadrecipes"))
-            new BukkitRunnable() {
-                public void run() {
-                    getRecipeLoader().reload(sender);
-                }
-            }.runTaskAsynchronously(this); //Run async for better performance!
+            getRecipeLoader().reload(sender);
         return false;
     }
 

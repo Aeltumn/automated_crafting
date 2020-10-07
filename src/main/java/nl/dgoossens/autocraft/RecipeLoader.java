@@ -23,11 +23,7 @@ public class RecipeLoader {
         instance = inst;
 
         //We load the recipes once on start, this is all we do on 1.12.
-        new BukkitRunnable() {
-            public void run() {
-                reload(null);
-            }
-        }.runTaskAsynchronously(instance);
+        reload(null);
     }
 
     /**
