@@ -21,8 +21,11 @@ public class RecipeLoader {
     public RecipeLoader(final AutomatedCrafting inst) {
         instance = inst;
 
-        //We load the recipes once on start, this is all we do on 1.12.
-        reload(null);
+        //We load the recipes the first tick after the server is done starting so
+        //all recipes are loaded from datapacks. We don't load asyncrhonously.
+        Bukkit.getScheduler().runTask(inst, () -> {
+            reload(null);
+        });
     }
 
     /**
