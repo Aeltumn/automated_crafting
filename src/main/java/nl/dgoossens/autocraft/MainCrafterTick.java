@@ -91,7 +91,10 @@ public class MainCrafterTick extends BukkitRunnable {
                                         });
                                     }
                                 }
+                                // If we get here we found an inventory holder so we don't drop an item.
+                                break;
                             }
+
                             //Drop the item if no container wants it.
                             if (loc.getWorld() != null) {
                                 ItemStack i = recipe.getResultDrop();
