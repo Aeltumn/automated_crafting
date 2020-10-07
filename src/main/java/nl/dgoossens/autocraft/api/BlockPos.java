@@ -14,7 +14,9 @@ public class BlockPos {
     private static final long Z_MASK = (1L << NUM_Z_BITS) - 1L;
     private static final int NUM_YZ_BITS = 38;
 
-    private int x, y, z;
+    private final int x;
+    private final int y;
+    private final int z;
 
     public BlockPos(int x, int y, int z) {
         this.x = x;
@@ -49,15 +51,15 @@ public class BlockPos {
     }
 
     private static int unpackX(long v) {
-        return (int)(v << 64 - NUM_YZ_BITS - NUM_X_BITS >> 64 - NUM_X_BITS);
+        return (int) (v << 64 - NUM_YZ_BITS - NUM_X_BITS >> 64 - NUM_X_BITS);
     }
 
     private static int unpackY(long v) {
-        return (int)(v << 64 - NUM_Y_BITS >> 64 - NUM_Y_BITS);
+        return (int) (v << 64 - NUM_Y_BITS >> 64 - NUM_Y_BITS);
     }
 
     private static int unpackZ(long v) {
-        return (int)(v << 64 - NUM_Y_BITS - NUM_Z_BITS >> 64 - NUM_Z_BITS);
+        return (int) (v << 64 - NUM_Y_BITS - NUM_Z_BITS >> 64 - NUM_Z_BITS);
     }
 
     public long toLong() {

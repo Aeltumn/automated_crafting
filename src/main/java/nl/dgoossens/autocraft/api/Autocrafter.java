@@ -6,8 +6,8 @@ import org.bukkit.inventory.ItemStack;
  * Stores all the data we have on an individual autocrafter.
  */
 public class Autocrafter {
-    private BlockPos position;
-    private ItemStack item;
+    private final BlockPos position;
+    private final ItemStack item;
     private boolean broken;
 
     Autocrafter(BlockPos position, ItemStack item) {

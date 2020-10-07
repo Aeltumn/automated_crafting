@@ -5,13 +5,27 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
-import nl.dgoossens.autocraft.api.*;
+import nl.dgoossens.autocraft.api.Autocrafter;
+import nl.dgoossens.autocraft.api.AutocrafterPositions;
+import nl.dgoossens.autocraft.api.BlockPos;
+import nl.dgoossens.autocraft.api.ChunkIdentifier;
+import nl.dgoossens.autocraft.api.CrafterRegistry;
+import nl.dgoossens.autocraft.api.CraftingRecipe;
 import nl.dgoossens.autocraft.helpers.ReflectionHelper;
 import nl.dgoossens.autocraft.helpers.SerializedItem;
-import org.bukkit.*;
+import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.block.Container;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
@@ -19,12 +33,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
-
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class CrafterRegistryImpl extends CrafterRegistry {
     public static final int VERSION = 1;
@@ -56,7 +64,7 @@ public class CrafterRegistryImpl extends CrafterRegistry {
         }
 
         //Inform the player how many recipes are being accepted right now
-        player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText("Autocrafter is accepting "+recipes.size()+" recipe(s)"));
+        player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText("Autocrafter is accepting " + recipes.size() + " recipe(s)"));
         return true;
     }
 
@@ -66,7 +74,7 @@ public class CrafterRegistryImpl extends CrafterRegistry {
 
     @Override
     public boolean create(final Location l, final Player p, final ItemStack type) {
-        if(!p.hasPermission("automatedcrafting.makeautocrafters") || type == null)
+        if (!p.hasPermission("automatedcrafting.makeautocrafters") || type == null)
             return false;
         BlockPos el = new BlockPos(l.getBlockX(), l.getBlockY(), l.getBlockZ());
         AutocrafterPositions am = getOrCreateAutocrafters(l.getWorld());
@@ -94,7 +102,7 @@ public class CrafterRegistryImpl extends CrafterRegistry {
         crafters = new ConcurrentHashMap<>();
 
         //Legacyload
-        if(legacyFile.exists()) {
+        if (legacyFile.exists()) {
             try {
                 FileReader fr = new FileReader(legacyFile);
                 JsonReader jr = new JsonReader(fr);
@@ -106,7 +114,7 @@ public class CrafterRegistryImpl extends CrafterRegistry {
                     ItemStack it = AutomatedCrafting.GSON.fromJson(n, LegacySerializedItem.class).getItem();
                     AutocrafterPositions m = crafters.getOrDefault(lbp.world, new AutocrafterPositions());
                     m.add(new BlockPos(lbp.x, lbp.y, lbp.z), it);
-                    if(!m.isEmpty())
+                    if (!m.isEmpty())
                         crafters.put(lbp.world, m);
                 }
                 jr.endObject();
@@ -131,24 +139,24 @@ public class CrafterRegistryImpl extends CrafterRegistry {
                 jr.beginObject();
                 jr.nextName();
                 int version = jr.nextInt();
-                if(version != VERSION) {
+                if (version != VERSION) {
                     //TODO Add compatibility for older versions of configuration when new configuration versions are added!
-                    AutomatedCrafting.INSTANCE.warning("You were running an old version of AutomatedCrafting (file version "+VERSION+") and all exsisting autocrafters have been invalidated, sorry! (every autocrafter will need to be rebuilt)");
+                    AutomatedCrafting.INSTANCE.warning("You were running an old version of AutomatedCrafting (file version " + VERSION + ") and all exsisting autocrafters have been invalidated, sorry! (every autocrafter will need to be rebuilt)");
                     return;
                 }
                 while (jr.hasNext()) {
                     String world = jr.nextName();
                     AutocrafterPositions m = new AutocrafterPositions();
                     jr.beginObject();
-                    while(jr.hasNext()) {
+                    while (jr.hasNext()) {
                         String n = jr.nextName(); //Chunk identifier code
                         ChunkIdentifier ci;
                         try {
                             ci = new ChunkIdentifier(Long.parseLong(n));
-                        } catch(NumberFormatException ignored) {
+                        } catch (NumberFormatException ignored) {
                             //Skip through the data for this chunk
                             jr.beginObject();
-                            while(jr.hasNext()) {
+                            while (jr.hasNext()) {
                                 jr.nextName();
                                 jr.skipValue();
                             }
@@ -156,12 +164,12 @@ public class CrafterRegistryImpl extends CrafterRegistry {
                             continue;
                         }
                         jr.beginObject();
-                        while(jr.hasNext()) {
+                        while (jr.hasNext()) {
                             String n2 = jr.nextName(); //Chunk identifier code
                             long l;
                             try {
                                 l = Long.parseLong(n2);
-                            } catch(NumberFormatException ignored) {
+                            } catch (NumberFormatException ignored) {
                                 jr.skipValue();
                                 continue;
                             }
@@ -173,7 +181,7 @@ public class CrafterRegistryImpl extends CrafterRegistry {
                     jr.endObject();
 
                     //If this world has data we add it to the full list
-                    if(!m.isEmpty())
+                    if (!m.isEmpty())
                         crafters.put(world, m);
                 }
                 jr.endObject();
@@ -185,7 +193,7 @@ public class CrafterRegistryImpl extends CrafterRegistry {
             }
         }
 
-        if(legacyLoaded) {
+        if (legacyLoaded) {
             forceSave();
         }
     }
@@ -203,10 +211,10 @@ public class CrafterRegistryImpl extends CrafterRegistry {
             jw.name("version");
             jw.value(VERSION);
 
-            for(String s : getWorldsRegistered()) {
+            for (String s : getWorldsRegistered()) {
                 Optional<AutocrafterPositions> m = getAutocrafters(s);
-                if(!m.isPresent()) continue;
-                if(m.get().isEmpty()) continue;
+                if (!m.isPresent()) continue;
+                if (m.get().isEmpty()) continue;
 
                 jw.name(s);
                 jw.beginObject();
@@ -214,8 +222,8 @@ public class CrafterRegistryImpl extends CrafterRegistry {
                     jw.name(String.valueOf(ci.toLong()));
                     ArrayList<Autocrafter> positions = m.get().getInChunk(ci);
                     jw.beginObject();
-                    for(Autocrafter a : positions) {
-                        if(a.isBroken()) continue; //Don't save broken ones.
+                    for (Autocrafter a : positions) {
+                        if (a.isBroken()) continue; //Don't save broken ones.
                         jw.name(String.valueOf(a.getPositionAsLong()));
                         jw.jsonValue(AutomatedCrafting.GSON.toJson(new SerializedItem(a.getItem())));
                     }
@@ -227,7 +235,7 @@ public class CrafterRegistryImpl extends CrafterRegistry {
             jw.flush();
             jw.close();
             fw.close();
-        } catch(Exception x) {
+        } catch (Exception x) {
             x.printStackTrace();
         }
 
@@ -256,32 +264,32 @@ public class CrafterRegistryImpl extends CrafterRegistry {
         }
 
         public ItemStack getItem() {
-            if(this.item==null) return null;
+            if (this.item == null) return null;
             ItemStack ret = ItemStack.deserialize(this.item);
-            if(meta!=null) ret.setItemMeta((ItemMeta) ConfigurationSerialization.deserializeObject(meta, ConfigurationSerialization.getClassByAlias("ItemMeta")));
+            if (meta != null) ret.setItemMeta((ItemMeta) ConfigurationSerialization.deserializeObject(meta, ConfigurationSerialization.getClassByAlias("ItemMeta")));
             try {
                 Object tag = mojangsonParser.getMethod("parse", String.class).invoke(null, nbt);
                 Object nullObject = null;
                 Object nmsStack = craftItemStack.getMethod("asNMSCopy", ItemStack.class).invoke(null, ret);
-                if(!tag.toString().equalsIgnoreCase("{}")) nmsStack.getClass().getMethod("setTag", nbtTagCompound).invoke(nmsStack, tag);
+                if (!tag.toString().equalsIgnoreCase("{}")) nmsStack.getClass().getMethod("setTag", nbtTagCompound).invoke(nmsStack, tag);
                 else nmsStack.getClass().getMethod("setTag", nbtTagCompound).invoke(nmsStack, nullObject);
                 ret = (ItemStack) craftItemStack.getMethod("asCraftMirror", itemStack).invoke(null, nmsStack);
-            } catch(Exception x) { x.printStackTrace(); }
+            } catch (Exception x) { x.printStackTrace(); }
             return ret;
         }
 
         private void build(ItemStack item) {
-            if(item==null) return;
-            if(item.hasItemMeta()) meta = item.getItemMeta().serialize();
+            if (item == null) return;
+            if (item.hasItemMeta()) meta = item.getItemMeta().serialize();
             ItemStack copy = item.clone();
             copy.setItemMeta(null);
             this.item = copy.serialize();
             try {
                 Object nmsStack = craftItemStack.getMethod("asNMSCopy", ItemStack.class).invoke(null, item);
                 Object tag = nbtTagCompound.newInstance();
-                if((boolean) nmsStack.getClass().getMethod("hasTag").invoke(nmsStack)) tag = nmsStack.getClass().getMethod("getTag").invoke(nmsStack);
+                if ((boolean) nmsStack.getClass().getMethod("hasTag").invoke(nmsStack)) tag = nmsStack.getClass().getMethod("getTag").invoke(nmsStack);
                 nbt = tag.toString();
-            } catch(Exception x) { x.printStackTrace(); }
+            } catch (Exception x) { x.printStackTrace(); }
         }
     }
 }

@@ -6,10 +6,10 @@ package nl.dgoossens.autocraft.api;
 public enum RecipeType {
     SHAPED("crafting_shaped"),
     SHAPELESS("crafting_shapeless"),
-    UNKNOWN("")
-    ;
+    UNKNOWN("");
 
-    private String id;
+    private final String id;
+
     RecipeType(String id) {
         this.id = id;
     }

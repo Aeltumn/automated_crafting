@@ -29,7 +29,7 @@ import org.bukkit.inventory.ShapelessRecipe;
  */
 public class BukkitRecipe implements CraftingRecipe {
     private RecipeType type = RecipeType.UNKNOWN;
-    private ItemStack result;
+    private final ItemStack result;
     private Set<RecipeRequirement> requirements;
 
     //Shaped Recipes
@@ -169,15 +169,15 @@ public class BukkitRecipe implements CraftingRecipe {
      * The requirements map for this recipe, can be cached.
      */
     private Set<RecipeRequirement> getRequirements() {
-        if(requirements == null) {
+        if (requirements == null) {
             requirements = new HashSet<>();
-            switch(type) {
+            switch (type) {
                 case SHAPED:
                     //Count how many times each character in the pattern occurrences
                     //Crafting recipes cannot have two items in a single slot.
                     Map<Character, Integer> occurrences = new HashMap<>();
-                    for(String s : pattern) {
-                        for(char c : s.toCharArray()) {
+                    for (String s : pattern) {
+                        for (char c : s.toCharArray()) {
                             occurrences.put(c, occurrences.getOrDefault(c, 0) + 1);
                         }
                     }
@@ -185,13 +185,13 @@ public class BukkitRecipe implements CraftingRecipe {
                     occurrences.forEach((c, i) -> {
                         RecipeRequirement rr = new RecipeRequirement(key.getOrDefault(c, new HashSet<>()), i);
                         //Return if invalid (key does not exit in map)
-                        if(rr.isInvalid()) {
-                            AutomatedCrafting.getInstance().warning("Warning shaped recipe with pattern [["+ String.join("], [", pattern) +"]] had character in pattern not in key map.");
+                        if (rr.isInvalid()) {
+                            AutomatedCrafting.getInstance().warning("Warning shaped recipe with pattern [[" + String.join("], [", pattern) + "]] had character in pattern not in key map.");
                             return;
                         }
 
                         //Try to merge this recipe requirement and otherwise add it
-                        if(!requirements.stream().filter(r -> r.overlap(rr)).map(r -> r.increment(rr.amount)).findAny().isPresent())
+                        if (!requirements.stream().filter(r -> r.overlap(rr)).map(r -> r.increment(rr.amount)).findAny().isPresent())
                             requirements.add(rr);
                     });
                     break;
@@ -200,7 +200,7 @@ public class BukkitRecipe implements CraftingRecipe {
                         RecipeRequirement rr = new RecipeRequirement(i, 1);
 
                         //Try to merge this recipe requirement and otherwise add it
-                        if(!requirements.stream().filter(r -> r.overlap(rr)).map(r -> r.increment(rr.amount)).findAny().isPresent())
+                        if (!requirements.stream().filter(r -> r.overlap(rr)).map(r -> r.increment(rr.amount)).findAny().isPresent())
                             requirements.add(rr);
                     });
                     break;
@@ -233,10 +233,10 @@ public class BukkitRecipe implements CraftingRecipe {
         requirements.stream().forEach(rr -> {
             int amountToTake = rr.amount;
             //Try each item one by one to see if we can take that item from our inventory.
-            for(ItemStack i : rr.item) {
+            for (ItemStack i : rr.item) {
                 int remain = takeFromInventory(inv, i, amountToTake);
                 //This item was used and something was taken
-                if(remain != amountToTake) {
+                if (remain != amountToTake) {
                     ItemStack res = getContainerItem(i);
                     if (res != null) {
                         //How many did we take, that's how many of this container item should be put back.
@@ -247,7 +247,7 @@ public class BukkitRecipe implements CraftingRecipe {
                 }
                 amountToTake = remain;
                 //We don't need to keep trying to complete this requirement if we've already done so.
-                if(amountToTake <= 0) break;
+                if (amountToTake <= 0) break;
             }
         });
         return ret;
@@ -259,7 +259,7 @@ public class BukkitRecipe implements CraftingRecipe {
             ItemStack[] its = inv.getStorageContents();
             for (int j = 0; j < its.length; ++j) {
                 ItemStack i = its[j];
-                if (item.isSimilar(i)) {
+                if (isSimilar(item, i)) {
                     int cap = Math.min(ret, i.getAmount());
                     if (i.getAmount() - cap <= 0) inv.setItem(j, null);
                     else i.setAmount(i.getAmount() - cap);
@@ -274,7 +274,7 @@ public class BukkitRecipe implements CraftingRecipe {
 
     @Override
     public boolean creates(ItemStack stack) {
-        return result.isSimilar(stack);
+        return isSimilar(result, stack);
     }
 
     @Override
@@ -286,12 +286,12 @@ public class BukkitRecipe implements CraftingRecipe {
      * A single recipe requirement.
      * Each recipe requirement is unique and no two recipe requirements
      * can contain similar items.
-     *
+     * <p>
      * Due to technical limitations weird edge-cases may occur when two requirements
      * are able to use the same item for crafting.
      */
     public static class RecipeRequirement {
-        private Collection<ItemStack> item;
+        private final Collection<ItemStack> item;
         private int amount;
 
         public RecipeRequirement(Collection<ItemStack> items, int amount) {
@@ -313,10 +313,10 @@ public class BukkitRecipe implements CraftingRecipe {
          * Returns true if two requirements overlap.
          */
         private boolean overlap(RecipeRequirement other) {
-            for(ItemStack i : item) {
+            for (ItemStack i : item) {
                 //If any item items overlap between the two we call them overlapping.
-                if(other.item.stream().anyMatch(j -> j.isSimilar(i))) {
-                    if(item.size() != other.item.size())
+                if (other.item.stream().anyMatch(j -> isSimilar(i, j))) {
+                    if (item.size() != other.item.size())
                         AutomatedCrafting.getInstance().warning("A recipe incorrectly merged two recipe requirements, please make sure in recipes no two slots are allowed to contain the same item unless they are fully identical. E.g. don't have a shapeless recipe with paper and paper or leather.");
                     return true;
                 }
@@ -326,19 +326,42 @@ public class BukkitRecipe implements CraftingRecipe {
 
         private boolean isContainedInInventory(ItemStack[] itemList) {
             int amountToFind = amount;
-            for(ItemStack it : itemList) {
+            for (ItemStack it : itemList) {
                 //If any item in our array of valid items is similar to this item we have found our match.
-                if (item.stream().anyMatch(f -> f.isSimilar(it))) {
+                if (item.stream().anyMatch(f -> isSimilar(f, it))) {
                     int cap = Math.min(it.getAmount(), amountToFind);
                     it.setAmount(it.getAmount() - cap); //Decrease item by amount so we can use it again for the next item.
                     amountToFind -= cap;
 
                     //If we have at least the amount of any valid item in this inventory we call it good.
-                    if(amountToFind <= 0)
+                    if (amountToFind <= 0)
                         return true;
                 }
             }
             return false;
         }
+
+        @Override
+        public String toString() {
+            return "RecipeRequirement{" +
+                    "item=" + item.stream().map(f -> f.serialize().toString()).collect(Collectors.joining(", ")) +
+                    ", amount=" + amount +
+                    '}';
+        }
+    }
+
+    /**
+     * Custom isSimilar implementation that supports ingredients with a
+     * durability of -1.
+     */
+    public static boolean isSimilar(ItemStack a, ItemStack b) {
+        // Documentation is a bit vague but it appears ingredients with -1 mean
+        // the metadata isn't important and it should accept any type. We always
+        // pass the ingredient as a so if a has a durability of -1 we only compare
+        // materials.
+        if (a != null && b != null && a.getDurability() == 32767) {
+            return a.getType() == b.getType();
+        }
+        return a != null && a.isSimilar(b);
     }
 }

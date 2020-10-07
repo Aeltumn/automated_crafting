@@ -1,10 +1,9 @@
 package nl.dgoossens.autocraft.helpers;
 
+import java.io.Serializable;
 import java.lang.reflect.Method;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
-
-import java.io.Serializable;
 
 /**
  * A serializable representation of an bukkit itemstack where nbt is properly

@@ -1,17 +1,16 @@
 package nl.dgoossens.autocraft.api;
 
-import org.bukkit.inventory.ItemStack;
-
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
+import javax.annotation.Nullable;
+import org.bukkit.inventory.ItemStack;
 
 /**
  * An object storing information on all autocrafters in a single world.
  */
 public class AutocrafterPositions {
-    private HashMap<ChunkIdentifier, ArrayList<Autocrafter>> data;
+    private final HashMap<ChunkIdentifier, ArrayList<Autocrafter>> data;
 
     public AutocrafterPositions() {
         data = new HashMap<>();
@@ -48,10 +47,10 @@ public class AutocrafterPositions {
     public ItemStack get(BlockPos position) {
         ChunkIdentifier ci = new ChunkIdentifier(position);
         long l = position.subtract(ci.getPosition()).toLong();
-        if(data.containsKey(ci)) {
+        if (data.containsKey(ci)) {
             //Find the autocrafter that has this position long as its position
-            for(Autocrafter a : data.get(ci)) {
-                if(a.getPositionAsLong() == l)
+            for (Autocrafter a : data.get(ci)) {
+                if (a.getPositionAsLong() == l)
                     return a.getItem();
             }
         }
@@ -80,7 +79,7 @@ public class AutocrafterPositions {
      */
     public void destroy(BlockPos position) {
         ChunkIdentifier ci = new ChunkIdentifier(position);
-        if(!data.containsKey(ci)) return; //No data on this chunk means we can't destroy it to begin with
+        if (!data.containsKey(ci)) return; //No data on this chunk means we can't destroy it to begin with
         ArrayList<Autocrafter> crafters = new ArrayList<>(data.get(ci));
         long l = position.subtract(ci.getPosition()).toLong();
 
@@ -88,7 +87,7 @@ public class AutocrafterPositions {
         crafters.removeIf(a -> a.getPositionAsLong() == l);
 
         //Put data back into crafters map
-        if(crafters.isEmpty()) data.remove(ci);
+        if (crafters.isEmpty()) data.remove(ci);
         else data.put(ci, crafters);
     }
 }

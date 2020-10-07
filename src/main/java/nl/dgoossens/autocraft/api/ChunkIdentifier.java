@@ -6,7 +6,8 @@ import java.util.Objects;
  * An identifier that represents a specific chunk in the world.
  */
 public class ChunkIdentifier {
-    private int x, z;
+    private final int x;
+    private final int z;
 
     /**
      * Build a chunk identifier from a long.

@@ -8,7 +8,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitRunnable;
 
 public class AutomatedCrafting extends JavaPlugin {
     public static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();

@@ -3,7 +3,12 @@ package nl.dgoossens.autocraft;
 import nl.dgoossens.autocraft.api.BlockPos;
 import org.bukkit.Material;
 import org.bukkit.Nameable;
-import org.bukkit.block.*;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockState;
+import org.bukkit.block.Container;
+import org.bukkit.block.Dispenser;
+import org.bukkit.block.Dropper;
+import org.bukkit.block.Hopper;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ItemFrame;
@@ -30,7 +35,7 @@ public class CreationListener implements Listener {
         final BlockPos bp = new BlockPos(bl);
 
         //If the block is not any of the allowed states.
-        if((!ConfigFile.allowDispensers() || !(bl.getState() instanceof Dispenser)) &&
+        if ((!ConfigFile.allowDispensers() || !(bl.getState() instanceof Dispenser)) &&
                 (!ConfigFile.allowHoppers() || !(bl.getState() instanceof Hopper)) &&
                 !(bl.getState() instanceof Dropper))
             return false;
@@ -116,7 +121,7 @@ public class CreationListener implements Listener {
                         AutomatedCrafting.INSTANCE.getCrafterRegistry().create(bl.getLocation(), e.getPlayer(), item);
 
                         //Only rename if we have a valid item that we can craft in there.
-                        if(AutomatedCrafting.INSTANCE.getCrafterRegistry().checkBlock(bl.getLocation(), e.getPlayer())) {
+                        if (AutomatedCrafting.INSTANCE.getCrafterRegistry().checkBlock(bl.getLocation(), e.getPlayer())) {
                             //The block is named autocrafter is it has an item frame AND there's an item in the item frame. If the item frame is empty the name should be reset.
                             //Rename it to autocrafter to make this clear to the player.
                             BlockState state = bl.getState();
