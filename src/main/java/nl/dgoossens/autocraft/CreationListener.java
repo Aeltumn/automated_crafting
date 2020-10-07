@@ -91,8 +91,8 @@ public class CreationListener implements Listener {
 
             //Clean should be true when the item is removed from the item frame. (can actually be true at all times but we don't need to update droppers randomly if you're placing down item frames, could break redstone)
             if (clean) {
-                Container state = (Container) bl.getState();
-                state.setCustomName(null);
+                BlockState state = bl.getState();
+                ((Nameable) state).setCustomName(null);
                 state.update();
             }
         }
@@ -119,8 +119,8 @@ public class CreationListener implements Listener {
                         if(AutomatedCrafting.INSTANCE.getCrafterRegistry().checkBlock(bl.getLocation(), e.getPlayer())) {
                             //The block is named autocrafter is it has an item frame AND there's an item in the item frame. If the item frame is empty the name should be reset.
                             //Rename it to autocrafter to make this clear to the player.
-                            Container state = (Container) bl.getState();
-                            state.setCustomName("Autocrafter");
+                            BlockState state = bl.getState();
+                            ((Nameable) state).setCustomName("Autocrafter");
                             state.update();
                         }
                     }
