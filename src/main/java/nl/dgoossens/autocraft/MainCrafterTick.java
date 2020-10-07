@@ -13,7 +13,6 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.Container;
-import org.bukkit.block.Hopper;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.DirectionalContainer;
@@ -76,26 +75,6 @@ public class MainCrafterTick extends BukkitRunnable {
                             }
 
                             //Check if there's a container nearby that wants the data.
-                            //First we check if it's a hopper in which case we put it back into the hopper.
-                            if (bl.getState() instanceof Hopper) {
-                                InventoryHolder c = (InventoryHolder) bl.getState();
-                                ItemStack i = recipe.getResultDrop();
-                                if (i.getType() != Material.AIR) {
-                                    HashMap<Integer, ItemStack> couldntFit = c.getInventory().addItem(i);
-
-                                    //Drop what couldn't fit
-                                    if (!couldntFit.isEmpty() && bl.getWorld() != null) {
-                                        couldntFit.forEach((k, v) -> {
-                                            if (v == null || v.getType() == Material.AIR) return; //Can't drop this
-                                            v.setAmount(k);
-                                            bl.getWorld().dropItem(bl.getLocation().clone().add(0.5, 0.25, 0.5), v);
-                                        });
-                                    }
-                                }
-                                break;
-                            }
-
-                            // If it's not a hopper it must a be dispenser or dropper
                             final DirectionalContainer dispenser = (DirectionalContainer) bl.getState().getData();
                             final Location loc = bl.getLocation().getBlock().getRelative(dispenser.getFacing()).getLocation();
                             if (loc.getBlock().getState() instanceof InventoryHolder) {

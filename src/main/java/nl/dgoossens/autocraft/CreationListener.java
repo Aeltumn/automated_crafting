@@ -8,7 +8,6 @@ import org.bukkit.block.BlockState;
 import org.bukkit.block.Container;
 import org.bukkit.block.Dispenser;
 import org.bukkit.block.Dropper;
-import org.bukkit.block.Hopper;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ItemFrame;
@@ -36,7 +35,6 @@ public class CreationListener implements Listener {
 
         //If the block is not any of the allowed states.
         if ((!ConfigFile.allowDispensers() || !(bl.getState() instanceof Dispenser)) &&
-                (!ConfigFile.allowHoppers() || !(bl.getState() instanceof Hopper)) &&
                 !(bl.getState() instanceof Dropper))
             return false;
 
