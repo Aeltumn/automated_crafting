@@ -6,7 +6,6 @@ load: STARTUP
 author: Aeltumn
 loadbefore: []
 softdepend: [CustomCrafting]
-api-version: 1.13
 commands:
   reloadrecipes:
     permission: automatedcrafting.reload

@@ -21,7 +21,7 @@ public class AutocrafterPositions {
      * We don't store autocrafter position objects with empty
      * data.
      */
-    public boolean isInvalid() {
+    public boolean isEmpty() {
         return data.isEmpty();
     }
 
