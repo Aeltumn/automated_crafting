@@ -37,7 +37,7 @@ An open-source plugin for Spigot 1.12 through 1.16 which adds powerful autocraft
 
 **Adding this plugin as a dependency**
 
-If you want to use this plugin as a dependency, for example to use the AutoCraftItemEvent. You can use a very handy service called [**jitpack.io**](https://jitpack.io/).<br/>
+If you want to use this plugin as a dependency. You can use a very handy service called [**jitpack.io**](https://jitpack.io/). <br/>
 This services makes it easy to add any git repository as a dependency.
 
 _Gradle_<br/>
