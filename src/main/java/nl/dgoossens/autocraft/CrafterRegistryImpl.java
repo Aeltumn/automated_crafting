@@ -35,7 +35,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class CrafterRegistryImpl extends CrafterRegistry {
-    public static final int VERSION = 1;
+    public static final int VERSION = 2;
 
     public CrafterRegistryImpl(JavaPlugin jp) {
         super();
@@ -130,7 +130,10 @@ public class CrafterRegistryImpl extends CrafterRegistry {
         }
 
         //Load modern file
+        boolean converted = false;
         if (file.exists()) {
+            boolean legacyItemNames = false;
+
             try {
                 FileReader fr = new FileReader(file);
                 JsonReader jr = new JsonReader(fr);
@@ -140,9 +143,17 @@ public class CrafterRegistryImpl extends CrafterRegistry {
                 jr.nextName();
                 int version = jr.nextInt();
                 if (version != VERSION) {
-                    //TODO Add compatibility for older versions of configuration when new configuration versions are added!
-                    AutomatedCrafting.INSTANCE.warning("You were running an old version of AutomatedCrafting (file version " + VERSION + ") and all exsisting autocrafters have been invalidated, sorry! (every autocrafter will need to be rebuilt)");
-                    return;
+                    // enable the converted flag so we immediately save the updated
+                    // configuration file
+                    converted = true;
+                    if (version == 1) {
+                        legacyItemNames = true;
+                    } else {
+                        AutomatedCrafting.INSTANCE.warning("You were running an old unsupported version of AutomatedCrafting (file version " + version + ", current version: " + VERSION + ") and all exsisting autocrafters have been invalidated, sorry! (every autocrafter will need to be rebuilt)");
+                        return;
+                    }
+
+                    AutomatedCrafting.INSTANCE.info("Loading configuration file from an older version of AutomatedCrafting. (file version " + version + ", current version: " + VERSION + ") The file will automatically be converted to the new version.");
                 }
                 while (jr.hasNext()) {
                     String world = jr.nextName();
@@ -174,7 +185,7 @@ public class CrafterRegistryImpl extends CrafterRegistry {
                                 continue;
                             }
                             //Update method of saving items to json
-                            m.add(ci, l, ((SerializedItem) AutomatedCrafting.GSON.fromJson(jr, SerializedItem.class)).getItem());
+                            m.add(ci, l, ((SerializedItem) AutomatedCrafting.GSON.fromJson(jr, SerializedItem.class)).getItem(legacyItemNames));
                         }
                         jr.endObject();
                     }
@@ -193,7 +204,7 @@ public class CrafterRegistryImpl extends CrafterRegistry {
             }
         }
 
-        if (legacyLoaded) {
+        if (legacyLoaded || converted) {
             forceSave();
         }
     }

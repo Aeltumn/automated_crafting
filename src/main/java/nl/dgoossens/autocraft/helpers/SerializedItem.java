@@ -23,6 +23,7 @@ public final class SerializedItem implements Serializable {
     private static final Method getTagMethod = ReflectionHelper.getMethod(itemStack, "getTag").orElse(null);
     private static final Method setTagMethod = ReflectionHelper.getMethod(itemStack, "setTag", nbtTagCompound).orElse(null);
     private static final Method asCraftMirrorMethod = ReflectionHelper.getMethod(craftItemStack, "asCraftMirror", itemStack).orElse(null);
+    private static final Method getMaterialMethod = ReflectionHelper.getMethod(Material.class, "getMaterial", String.class, Boolean.TYPE).orElse(null);
 
     //All other properties of an item are stored in NBT but not material, durability or amount.
     private transient Material materialCache;
@@ -48,9 +49,33 @@ public final class SerializedItem implements Serializable {
      * original item.
      */
     public ItemStack getItem() {
+        return getItem(false);
+    }
+
+    /**
+     * Create an item stack from this serialized item.
+     * Has the same properties, metadata and NBT as the
+     * original item.
+     *
+     * @param legacyMaterial True if the material should be converted
+     *                       from the 1.12 names to the modern
+     *                       names. Useful for loading old configuration
+     *                       files.
+     */
+    public ItemStack getItem(boolean legacyMaterial) {
         if (material == null) return new ItemStack(Material.AIR);
         if (materialCache == null) {
-            materialCache = Material.getMaterial(material);
+            // if we are on 1.13 and using the legacy material setting we use the custom
+            // method used to upgrade data to the new format
+            if (getMaterialMethod == null || !legacyMaterial) {
+                materialCache = Material.getMaterial(material);
+            } else {
+                try {
+                    materialCache = (Material) getMaterialMethod.invoke(null, material, true);
+                } catch (Exception x) {
+                    x.printStackTrace();
+                }
+            }
         }
         ItemStack ret = new ItemStack(materialCache, amount, durability);
         try {
