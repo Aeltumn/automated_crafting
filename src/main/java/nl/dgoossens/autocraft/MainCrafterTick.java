@@ -85,7 +85,7 @@ public class MainCrafterTick extends BukkitRunnable {
                             if (loc.getBlock().getState() instanceof InventoryHolder) {
                                 InventoryHolder c = (InventoryHolder) loc.getBlock().getState();
                                 ItemStack i = recipe.getResultDrop();
-                                if (i.getType() != Material.AIR) {
+                                if (i != null && i.getType() != Material.AIR) {
                                     c.getInventory().addItem(i);
                                 }
                                 break;

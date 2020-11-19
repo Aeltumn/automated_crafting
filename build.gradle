@@ -71,6 +71,7 @@ spigot {
     description "An open-source autocrafting plugin for spigot."
     load STARTUP
     authors "Aeltumn"
+    apiVersion '1.13'
     softDepends "CustomCrafting"
     commands {
         reloadrecipes {
