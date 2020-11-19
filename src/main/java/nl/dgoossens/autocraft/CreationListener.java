@@ -21,6 +21,7 @@ import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.hanging.HangingPlaceEvent;
 import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -103,32 +104,42 @@ public class CreationListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onClickItemFrame(final PlayerInteractEntityEvent e) {
-        if (e.getRightClicked().getType().equals(EntityType.ITEM_FRAME)) {
-            Block bl = e.getRightClicked().getLocation().getBlock().getRelative(((ItemFrame) e.getRightClicked()).getAttachedFace());
-            if (isValidBlock(bl, false)) {
-                //If there's already something in the item frame, cancel!
-                //This prevents rotating the item in the item frame.
-                if (((ItemFrame) e.getRightClicked()).getItem().getType() != Material.AIR) {
-                    e.setCancelled(true);
-                    return;
-                }
-                //Wait a second for the item to be put into the frame.
-                new BukkitRunnable() {
-                    public void run() {
-                        ItemStack item = ((ItemFrame) e.getRightClicked()).getItem();
-                        AutomatedCrafting.INSTANCE.getCrafterRegistry().create(bl.getLocation(), e.getPlayer(), item);
+        // ignore clicking non-item frames
+        if (!e.getRightClicked().getType().equals(EntityType.ITEM_FRAME)) {
+            return;
+        }
 
-                        //Only rename if we have a valid item that we can craft in there.
-                        if (AutomatedCrafting.INSTANCE.getCrafterRegistry().checkBlock(bl.getLocation(), e.getPlayer())) {
-                            //The block is named autocrafter is it has an item frame AND there's an item in the item frame. If the item frame is empty the name should be reset.
-                            //Rename it to autocrafter to make this clear to the player.
-                            BlockState state = bl.getState();
-                            ((Nameable) state).setCustomName("Autocrafter");
-                            state.update();
-                        }
-                    }
-                }.runTaskLater(AutomatedCrafting.INSTANCE, 1);
+        // ignore clicking whilst holding nothing
+        ItemStack heldItem = e.getHand() == EquipmentSlot.HAND ? e.getPlayer().getInventory().getItemInMainHand() :
+                e.getPlayer().getInventory().getItemInOffHand();
+        if (heldItem == null || heldItem.getType() == Material.AIR) {
+            return;
+        }
+
+        Block bl = e.getRightClicked().getLocation().getBlock().getRelative(((ItemFrame) e.getRightClicked()).getAttachedFace());
+        if (isValidBlock(bl, false)) {
+            //If there's already something in the item frame, cancel!
+            //This prevents rotating the item in the item frame.
+            if (((ItemFrame) e.getRightClicked()).getItem().getType() != Material.AIR) {
+                e.setCancelled(true);
+                return;
             }
+            //Wait a second for the item to be put into the frame.
+            new BukkitRunnable() {
+                public void run() {
+                    ItemStack item = ((ItemFrame) e.getRightClicked()).getItem();
+                    AutomatedCrafting.INSTANCE.getCrafterRegistry().create(bl.getLocation(), e.getPlayer(), item);
+
+                    //Only rename if we have a valid item that we can craft in there.
+                    if (AutomatedCrafting.INSTANCE.getCrafterRegistry().checkBlock(bl.getLocation(), e.getPlayer())) {
+                        //The block is named autocrafter is it has an item frame AND there's an item in the item frame. If the item frame is empty the name should be reset.
+                        //Rename it to autocrafter to make this clear to the player.
+                        BlockState state = bl.getState();
+                        ((Nameable) state).setCustomName("Autocrafter");
+                        state.update();
+                    }
+                }
+            }.runTaskLater(AutomatedCrafting.INSTANCE, 1);
         }
     }
 }
