@@ -3,6 +3,7 @@ import java.text.SimpleDateFormat
 plugins {
     id 'java'
     id 'idea'
+    id 'kr.entree.spigradle' version '2.2.3'
 }
 
 apply plugin: 'java'
@@ -36,19 +37,6 @@ dependencies {
     compileOnly files("libs/customcrafting-1.6.3.0.jar")
 }
 
-task generateResources(type: Copy) {
-    group 'export'
-    from 'src/main/resources'
-    into "$buildDir/generated-resources"
-    filter { line -> line.replaceAll('%version%', version as String) }
-}
-
-task buildJar(type: Jar, dependsOn: generateResources) {
-    group 'export'
-    from sourceSets.main.output.classesDirs
-    from "$buildDir/generated-resources"
-}
-
 task sourcesJar(type: Jar, dependsOn: classes) {
     group 'export'
     archiveClassifier = 'sources'
@@ -61,11 +49,11 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
     from javadoc.destinationDir
 }
 
-task exportAll(dependsOn: [ buildJar, sourcesJar, javadocJar ]) {
+task exportAll(dependsOn: [ generateSpigotDescription, build, sourcesJar, javadocJar ]) {
     group 'export'
 }
 
-buildJar {
+jar {
     manifest {
         attributes(
                 'Implementation-Version': version,
@@ -76,5 +64,33 @@ buildJar {
                 'Build-Jdk': "${System.properties['java.version']} (${System.properties['java.vendor']} ${System.properties['java.vm.version']})",
                 'Build-OS': "${System.properties['os.name']} ${System.properties['os.arch']} ${System.properties['os.version']}"
         )
+    }
+}
+
+spigot {
+    description "An open-source autocrafting plugin for spigot."
+    load STARTUP
+    authors "Aeltumn"
+    softDepends "CustomCrafting"
+    commands {
+        reloadrecipes {
+            permission "automatedcrafting.reload"
+            description "Reloads all recipes for the autocrafters, gets ran automatically when running /reload!"
+        }
+    }
+
+    permissions {
+        'automatedcrafting.reload' {
+            defaults "op"
+            description "Allows using /reloadrecipes."
+        }
+        'automatedcrafting.makeautocrafters' {
+            defaults "true"
+            description "Allows players to make autocrafters."
+        }
+    }
+    debug {
+        eula true
+        buildVersion '1.16.4'
     }
 }

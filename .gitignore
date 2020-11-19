@@ -74,3 +74,6 @@ fabric.properties
 # Gradle
 build/
 .gradle/
+
+# spigradle
+debug/
