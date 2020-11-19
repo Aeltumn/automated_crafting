@@ -1,7 +1,6 @@
 package nl.dgoossens.autocraft;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import nl.dgoossens.autocraft.api.Autocrafter;
 import nl.dgoossens.autocraft.api.BlockPos;
 import nl.dgoossens.autocraft.api.ChunkIdentifier;

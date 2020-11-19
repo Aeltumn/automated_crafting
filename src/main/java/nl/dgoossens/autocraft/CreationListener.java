@@ -46,18 +46,20 @@ public class CreationListener implements Listener {
     //This method specifically is needed because when droppers put the item directly into the neighbouring container the BlockDispenseEvent is not fired.
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onDispense(final InventoryMoveItemEvent e) {
+        //Autocrafters can't drop items normally. This is to avoid dispensing ingredients when powered.
         if (e.getSource().getHolder() instanceof Container) {
             Block bl = ((Container) e.getSource().getHolder()).getBlock();
             if (isValidBlock(bl, true))
-                e.setCancelled(true); //Autocrafters can't drop items normally. This is to avoid dispensing ingredients when powered.
+                e.setCancelled(true);
         }
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onDispense(final BlockDispenseEvent e) {
+        //Autocrafters can't drop items normally. This is to avoid dispensing ingredients when powered.
         Block bl = e.getBlock();
         if (isValidBlock(bl, true))
-            e.setCancelled(true); //Autocrafters can't drop items normally. This is to avoid dispensing ingredients when powered.
+            e.setCancelled(true);
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -69,18 +71,20 @@ public class CreationListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBreak(final BlockBreakEvent e) {
-        //Due to bukkit being annoying I can't rename the autocrafter before you break it.
-        breakCrafter(e.getBlock(), true); //Destroying the item frame break the autocrafter.
+        //Destroying the item frame break the autocrafter.
+        breakCrafter(e.getBlock(), true);
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onDestroy(final HangingBreakEvent e) {
-        destroyCrafter(e.getEntity(), false); //Destroying the item frame break the autocrafter.
+        //Destroying the item frame break the autocrafter.
+        destroyCrafter(e.getEntity(), false);
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onStealItem(final EntityDamageByEntityEvent e) {
-        destroyCrafter(e.getEntity(), true); //Stealing the item from the item frame destroys the autocrafter.
+        //Stealing the item from the item frame destroys the autocrafter.
+        destroyCrafter(e.getEntity(), true);
     }
 
     private void destroyCrafter(final Entity itemFrame, final boolean clean) {
