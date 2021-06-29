@@ -2,3 +2,6 @@
 alternate-blocks:
   # If true, dispensers can be turned into autocrafters
   allowDispensers: false
+
+# The amount of ticks between activations of all autocrafters (every tick is 1/20th of a second)
+ticks-per-craft: 27

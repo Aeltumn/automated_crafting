@@ -17,25 +17,14 @@ import org.bukkit.entity.Player;
  */
 public final class ReflectionHelper {
     private static String version = null; //`v1_12_R1`
-    private static String nmsPackage = ""; //`net.minecraft.server.v1_12_R1.`
     private static String cbPackage = ""; //`org.bukkit.craftbukkit.v1_12_R1.`
 
-    private static final String NMS_STRING = "net.minecraft.server.";
+    private static final String NMS_STRING = "net.minecraft.";
     private static final String CB_STRING = "org.bukkit.craftbukkit.";
-
-    private static final Class<?> packetClass = getNMSClass("Packet").orElse(null);
-    private static final Class<?> entityPlayerClass = getNMSClass("EntityPlayer").orElse(null);
-    private static final Class<?> playerConnectionClass = getNMSClass("PlayerConnection").orElse(null);
-    private static final Class<?> craftPlayerClass = getCraftBukkitClass("entity.CraftPlayer").orElse(null);
-    private static final Field playerConnectionField = getField(entityPlayerClass, "playerConnection").orElse(null);
-    private static final Method sendPacketMethod = getMethod(playerConnectionClass, "sendPacket", packetClass).orElse(null);
-    private static final Method getHandleMethod = getMethod(craftPlayerClass, "getHandle").orElse(null);
-    private static final Class<?> chatComponentTextClass = getNMSClass("ChatComponentText").orElse(null);
-    private static final Constructor<?> chatComponentTextConstructor = getConstructor(chatComponentTextClass, String.class).orElse(null);
 
     /**
      * Loads the version this utility looks at to determine the class
-     * locations of NMS/CB classes.
+     * locations of CB classes.
      */
     private static void loadVersion(final String full) {
         StringBuilder sb = new StringBuilder();
@@ -50,7 +39,6 @@ public final class ReflectionHelper {
             sb.append(ch);
         }
         version = sb.toString();
-        nmsPackage = NMS_STRING + (version.length() > 0 ? version + "." : "");
         cbPackage = CB_STRING + (version.length() > 0 ? version + "." : "");
     }
 
@@ -63,12 +51,11 @@ public final class ReflectionHelper {
     }
 
     /**
-     * Gets NMS Class (eg. net.minecraft.server.v1_12_R1.ParticleEffect)
+     * Gets NMS Class (eg. net.minecraft.ParticleEffect)
      */
     public static Optional<Class<?>> getNMSClass(String name) {
         try {
-            if (nmsPackage.equals("")) loadVersion(Bukkit.getServer().getClass().getPackage().getName());
-            return Optional.of(Class.forName(nmsPackage + name));
+            return Optional.of(Class.forName(NMS_STRING + name));
         } catch (ClassNotFoundException e) {
             return Optional.empty();
         }
@@ -146,25 +133,5 @@ public final class ReflectionHelper {
         try {
             field.set(object, value);
         } catch (Exception ignored) {}
-    }
-
-    /**
-     * Sends a packet to player, not version-dependent.
-     */
-    public static void sendPacket(@Nullable Object packet, @Nullable Player player) throws Exception {
-        if (packet == null || player == null) return;
-        Object entityPlayer = getHandleMethod.invoke(player);
-        Object playerConnection = playerConnectionField.get(entityPlayer);
-        sendPacketMethod.invoke(playerConnection, packet);
-    }
-
-    /**
-     * Get the IChatBaseComponent from a string of text.
-     */
-    public static Object getChatBaseComponent(String text) {
-        try {
-            return chatComponentTextConstructor.newInstance(ChatColor.translateAlternateColorCodes('&', text));
-        } catch (Exception ignored) {}
-        return null;
     }
 }

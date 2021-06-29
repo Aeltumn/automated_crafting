@@ -14,16 +14,15 @@ public final class SerializedItem implements Serializable {
 
     private static final Object NULL_OBJECT = null;
     private static final Class<?> craftItemStack = ReflectionHelper.getCraftBukkitClass("inventory.CraftItemStack").orElse(null);
-    private static final Class<?> mojangsonParser = ReflectionHelper.getNMSClass("MojangsonParser").orElse(null);
-    private static final Class<?> nbtTagCompound = ReflectionHelper.getNMSClass("NBTTagCompound").orElse(null);
-    private static final Class<?> itemStack = ReflectionHelper.getNMSClass("ItemStack").orElse(null);
+    private static final Class<?> mojangsonParser = ReflectionHelper.getNMSClass("nbt.MojangsonParser").orElse(null);
+    private static final Class<?> nbtTagCompound = ReflectionHelper.getNMSClass("nbt.NBTTagCompound").orElse(null);
+    private static final Class<?> itemStack = ReflectionHelper.getNMSClass("world.item.ItemStack").orElse(null);
     private static final Method parseMethod = ReflectionHelper.getMethod(mojangsonParser, "parse", String.class).orElse(null);
     private static final Method asNMSCopyMethod = ReflectionHelper.getMethod(craftItemStack, "asNMSCopy", ItemStack.class).orElse(null);
     private static final Method hasTagMethod = ReflectionHelper.getMethod(itemStack, "hasTag").orElse(null);
     private static final Method getTagMethod = ReflectionHelper.getMethod(itemStack, "getTag").orElse(null);
     private static final Method setTagMethod = ReflectionHelper.getMethod(itemStack, "setTag", nbtTagCompound).orElse(null);
     private static final Method asCraftMirrorMethod = ReflectionHelper.getMethod(craftItemStack, "asCraftMirror", itemStack).orElse(null);
-    private static final Method getMaterialMethod = ReflectionHelper.getMethod(Material.class, "getMaterial", String.class, Boolean.TYPE).orElse(null);
 
     //All other properties of an item are stored in NBT but not material, durability or amount.
     private transient Material materialCache;
@@ -65,19 +64,12 @@ public final class SerializedItem implements Serializable {
     public ItemStack getItem(boolean legacyMaterial) {
         if (material == null) return new ItemStack(Material.AIR);
         if (materialCache == null) {
-            // if we are on 1.13 and using the legacy material setting we use the custom
-            // method used to upgrade data to the new format
-            if (getMaterialMethod == null || !legacyMaterial) {
-                materialCache = Material.getMaterial(material);
-            } else {
-                try {
-                    materialCache = (Material) getMaterialMethod.invoke(null, material, true);
-                } catch (Exception x) {
-                    x.printStackTrace();
-                }
-            }
+            materialCache = Material.getMaterial(material, legacyMaterial);
         }
+
         ItemStack ret = new ItemStack(materialCache, amount, durability);
+
+
         try {
             Object tag = parseMethod.invoke(null, nbt);
             Object nmsStack = asNMSCopyMethod.invoke(null, ret);

@@ -1,16 +1,13 @@
 package nl.dgoossens.autocraft.helpers;
 
-import java.lang.reflect.Method;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import nl.dgoossens.autocraft.AutomatedCrafting;
 import nl.dgoossens.autocraft.api.CraftingRecipe;
 import nl.dgoossens.autocraft.api.RecipeType;
@@ -18,8 +15,10 @@ import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
+import org.bukkit.inventory.RecipeChoice;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.ShapelessRecipe;
+import org.bukkit.inventory.meta.BlockStateMeta;
 
 /**
  * Build a recipe from item stacks in code.
@@ -39,23 +38,8 @@ public class BukkitRecipe implements CraftingRecipe {
     //Shapeless Recipes
     private Collection<Collection<ItemStack>> ingredients;
 
-    //A few NMS classes we use because 1.12 is outdated and doesn't support cool recipes yet.
-    private static final Class<?> recipeChoice = findClass("org.bukkit.inventory.RecipeChoice").orElse(null);
-    private static final Class<?> exactChoice = Optional.ofNullable(recipeChoice).map(f -> f.getDeclaredClasses()[0]).orElse(null);
-    private static final Class<?> materialChoice = Optional.ofNullable(recipeChoice).map(f -> f.getDeclaredClasses()[1]).orElse(null);
-
-    private static final Method getChoiceMapMethod = ReflectionHelper.getMethod(ShapedRecipe.class, "getChoiceMap").orElse(null);
-    private static final Method recipeChoiceGetItemStackMethod = ReflectionHelper.getMethod(recipeChoice, "getItemStack").orElse(null);
-    private static final Method getChoiceListMethod = ReflectionHelper.getMethod(ShapelessRecipe.class, "getChoiceList").orElse(null);
-
-    //Get a class and put it in an optional.
-    private static Optional<Class<?>> findClass(String className) {
-        try {
-            return Optional.ofNullable(Class.forName(className));
-        } catch (Exception x) {
-            return Optional.empty();
-        }
-    }
+    private static final Class<?> craftMetaBlockState = ReflectionHelper.getCraftBukkitClass("inventory.CraftMetaBlockState").orElse(null);
+    private static final Field blockEntityTag = ReflectionHelper.getField(craftMetaBlockState, "blockEntityTag").orElse(null);
 
     public BukkitRecipe(ItemStack result, String[] pattern, Map<Character, Collection<ItemStack>> key) {
         type = RecipeType.SHAPED;
@@ -78,85 +62,45 @@ public class BukkitRecipe implements CraftingRecipe {
         if (bukkitRecipe instanceof ShapedRecipe) {
             type = RecipeType.SHAPED;
             pattern = ((ShapedRecipe) bukkitRecipe).getShape();
+            key = new HashMap<>();
 
-            // since late 1.13+ we have the new choice map system
-            if (exactChoice != null) {
-                try {
-                    key = new HashMap<>();
-                    Map<Character, Object> choiceMap = (Map<Character, Object>) getChoiceMapMethod.invoke(bukkitRecipe);
-                    choiceMap.forEach((k, v) -> {
-                        List<ItemStack> values = new ArrayList<>();
-                        if (v != null) { //V can be null for some reason.
-                            if (exactChoice.isAssignableFrom(v.getClass()) || materialChoice.isAssignableFrom(v.getClass())) {
-                                try {
-                                    List<Object> choices = (List<Object>) v.getClass().getMethod("getChoices").invoke(v);
-                                    for (Object o : choices) {
-                                        if (o instanceof Material) values.add(new ItemStack((Material) o));
-                                        else values.add((ItemStack) o);
-                                    }
-                                } catch (Exception x) {
-                                    x.printStackTrace();
-                                }
-                            } else {
-                                ItemStack val = null;
-                                try {
-                                    val = (ItemStack) recipeChoiceGetItemStackMethod.invoke(v);
-                                } catch (Exception x) {
-                                    x.printStackTrace();
-                                }
-                                if (val != null) values.add(val);
-                            }
+            Map<Character, RecipeChoice> choiceMap = ((ShapedRecipe) bukkitRecipe).getChoiceMap();
+            choiceMap.forEach((k, v) -> {
+                List<ItemStack> values = new ArrayList<>();
+                if (v != null) { //V can be null for some reason.
+                    if (v instanceof RecipeChoice.ExactChoice) {
+                        values.addAll(((RecipeChoice.ExactChoice) v).getChoices());
+                    } else if (v instanceof RecipeChoice.MaterialChoice) {
+                        for (Material m : ((RecipeChoice.MaterialChoice) v).getChoices()) {
+                            values.add(new ItemStack(m));
                         }
-                        key.put(k, values);
-                    });
-                } catch (Exception x) {
-                    x.printStackTrace();
+                    } else {
+                        ItemStack val = v.getItemStack();
+                        if (val != null) values.add(val);
+                    }
                 }
-            } else {
-                key = new HashMap<>();
-                ((ShapedRecipe) bukkitRecipe).getIngredientMap().forEach((k, v) -> {
-                    if (v == null) return;
-                    key.put(k, Collections.singletonList(v));
-                });
-            }
+                key.put(k, values);
+            });
         } else if (bukkitRecipe instanceof ShapelessRecipe) {
             type = RecipeType.SHAPELESS;
+            ingredients = new ArrayList<>();
 
-            // since late 1.13+ we have the new choice map system
-            if (exactChoice != null) {
-                try {
-                    ingredients = new ArrayList<>();
-                    List<Object> choiceList = (List<Object>) getChoiceListMethod.invoke(bukkitRecipe);
-                    choiceList.forEach(v -> {
-                        List<ItemStack> values = new ArrayList<>();
-                        if (v != null) { //V can be null for some reason.
-                            if (exactChoice.isAssignableFrom(v.getClass()) || materialChoice.isAssignableFrom(v.getClass())) {
-                                try {
-                                    List<Object> choices = (List<Object>) v.getClass().getMethod("getChoices").invoke(v);
-                                    for (Object o : choices) {
-                                        if (o instanceof Material) values.add(new ItemStack((Material) o));
-                                        else values.add((ItemStack) o);
-                                    }
-                                } catch (Exception x) {
-                                    x.printStackTrace();
-                                }
-                            } else {
-                                ItemStack val = null;
-                                try {
-                                    val = (ItemStack) recipeChoiceGetItemStackMethod.invoke(v);
-                                } catch (Exception x) {
-                                    x.printStackTrace();
-                                }
-                                if (val != null) values.add(val);
-                            }
+            List<RecipeChoice> choiceList = ((ShapelessRecipe) bukkitRecipe).getChoiceList();
+            for (var v : choiceList) {
+                List<ItemStack> values = new ArrayList<>();
+                if (v != null) { //V can be null for some reason.
+                    if (v instanceof RecipeChoice.ExactChoice) {
+                        values.addAll(((RecipeChoice.ExactChoice) v).getChoices());
+                    } else if (v instanceof RecipeChoice.MaterialChoice) {
+                        for (Material m : ((RecipeChoice.MaterialChoice) v).getChoices()) {
+                            values.add(new ItemStack(m));
                         }
-                        ingredients.add(values);
-                    });
-                } catch (Exception x) {
-                    x.printStackTrace();
+                    } else {
+                        ItemStack val = v.getItemStack();
+                        if (val != null) values.add(val);
+                    }
                 }
-            } else {
-                ingredients = ((ShapelessRecipe) bukkitRecipe).getIngredientList().stream().map(Collections::singletonList).collect(Collectors.toList());
+                ingredients.add(values);
             }
         }
     }
@@ -274,7 +218,22 @@ public class BukkitRecipe implements CraftingRecipe {
 
     @Override
     public boolean creates(ItemStack stack) {
-        return isSimilar(result, stack);
+        var clone = stack.clone();
+
+        // For all block state meta items we clear the block entity tag off the item we use for comparisons
+        // so a full shulker box is accepted as craftable
+        if (clone.hasItemMeta() && clone.getItemMeta() instanceof BlockStateMeta meta) {
+            if (blockEntityTag != null) {
+                try {
+                    blockEntityTag.set(meta, null);
+                } catch (Exception x) {
+                    x.printStackTrace();
+                }
+            }
+            clone.setItemMeta(meta);
+        }
+
+        return isSimilar(result, clone);
     }
 
     @Override

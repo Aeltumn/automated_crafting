@@ -12,6 +12,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.command.CommandSender;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.Recipe;
 
 public class RecipeLoader {
     private final AutomatedCrafting instance;
@@ -67,18 +68,9 @@ public class RecipeLoader {
         loadedFilenames.clear();
 
         //Load recipes from Bukkit, skip any that we already know.
-        Iterator<org.bukkit.inventory.Recipe> it = Bukkit.recipeIterator();
+        Iterator<Recipe> it = Bukkit.recipeIterator();
         while (it.hasNext()) {
-            org.bukkit.inventory.Recipe bukkitRecipe = it.next();
-            if (bukkitRecipe instanceof Keyed) {
-                if (!loadedFilenames.contains(((Keyed) bukkitRecipe).getKey().getKey() + ".json")) {
-                    //Have we already loaded it?
-                    BukkitRecipe r = new BukkitRecipe(bukkitRecipe);
-                    if (r.getType() == RecipeType.UNKNOWN) continue; //We don't want unknown recipes!
-                    loadedFilenames.add(((Keyed) bukkitRecipe).getKey().getKey() + ".json");
-                    loadedRecipes.add(r);
-                }
-            }
+            loadRecipe(it.next());
         }
 
         //Check if something was loaded this iteration
@@ -94,7 +86,7 @@ public class RecipeLoader {
 
         //Custom compatibility
         if (Bukkit.getPluginManager().isPluginEnabled("CustomCrafting"))
-            loadedRecipes.addAll(new CustomCraftingCompat().load());
+            loadedRecipes.addAll(new CustomCraftingCompat().load(this));
 
         //Check if something was loaded this iteration
         j = loadedRecipes.size() - j;
@@ -102,6 +94,21 @@ public class RecipeLoader {
             if (listener != null)
                 listener.sendMessage("(Re)loaded " + j + " custom recipes from compatible plugins, took " + (System.currentTimeMillis() - t) + " ms...");
             instance.getLogger().info("(Re)loaded " + j + " custom recipes from compatible plugins, took " + (System.currentTimeMillis() - t) + " ms...");
+        }
+    }
+
+    /**
+     * Loads a new recipe from a {@link Recipe} instance.
+     */
+    public void loadRecipe(Recipe recipe) {
+        if (recipe instanceof Keyed) {
+            if (!loadedFilenames.contains(((Keyed) recipe).getKey().getKey() + ".json")) {
+                //Have we already loaded it?
+                BukkitRecipe r = new BukkitRecipe(recipe);
+                if (r.getType() == RecipeType.UNKNOWN) return; //We don't want unknown recipes!
+                loadedFilenames.add(((Keyed) recipe).getKey().getKey() + ".json");
+                loadedRecipes.add(r);
+            }
         }
     }
 }
