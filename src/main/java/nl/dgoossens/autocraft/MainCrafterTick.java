@@ -1,6 +1,7 @@
 package nl.dgoossens.autocraft;
 
 import java.util.ArrayList;
+import java.util.List;
 import nl.dgoossens.autocraft.api.Autocrafter;
 import nl.dgoossens.autocraft.api.BlockPos;
 import nl.dgoossens.autocraft.api.ChunkIdentifier;
@@ -74,7 +75,7 @@ public class MainCrafterTick extends BukkitRunnable {
                             }
 
                             //Take the materials we need for the craft from the crafter
-                            ArrayList<ItemStack> leftovers = recipe.takeMaterials(container.getInventory());
+                            List<ItemStack> leftovers = recipe.takeMaterials(container.getInventory());
 
                             //Put leftovers back into the inventory, we'll assume it always fits
                             container.getInventory().addItem(leftovers.toArray(new ItemStack[0]));

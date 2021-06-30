@@ -1,6 +1,6 @@
 package nl.dgoossens.autocraft.api;
 
-import java.util.ArrayList;
+import java.util.List;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
@@ -30,18 +30,5 @@ public interface CraftingRecipe {
      * Take the materials from the inventory that are required for this craft.
      * Put resulting container items into the returned array list.
      */
-    ArrayList<ItemStack> takeMaterials(Inventory inv);
-
-    /**
-     * Get the 'container item' which is the item
-     * left in the crafting area after an item is used
-     * in a crafting recipe.
-     * <p>
-     * Returns null if nothing/air is the container item.
-     */
-    default ItemStack getContainerItem(ItemStack input) {
-        var remainingItem = input.getType().getCraftingRemainingItem();
-        if (remainingItem == null) return null;
-        return new ItemStack(remainingItem, input.getAmount());
-    }
+    List<ItemStack> takeMaterials(Inventory inv);
 }
