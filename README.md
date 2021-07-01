@@ -47,7 +47,7 @@ repositories {
      maven { url 'https://jitpack.io' }
 }
 dependencies {
-    implementation 'com.github.Aeltumn:automated_crafting:master-SNAPSHOT'
+    implementation 'com.github.Aeltumn:automated_crafting:main-SNAPSHOT'
 }
 ```
 
@@ -64,6 +64,6 @@ For Maven you can add the following lines to your _pom.xml_ file:
 <dependency>
     <groupId>com.github.Aeltumn</groupId>
     <artifactId>automated_crafting</artifactId>
-    <version>master-SNAPSHOT</version>
+    <version>main-SNAPSHOT</version>
 </dependency>
 ```
