@@ -1,5 +1,5 @@
 # Automated Crafting
-An open-source plugin for Spigot 1.12 through 1.16 which adds powerful autocrafters capable of automatically crafting anything. With a configuration to allow further customisation like increasing the difficulty of obtaining the autocrafters.
+An open-source plugin for Bukkit which adds autocrafters capable of automatically crafting anything.
 
 <br/>
 
@@ -30,8 +30,10 @@ An open-source plugin for Spigot 1.12 through 1.16 which adds powerful autocraft
 <br/><br/>
 
 **Other Features**
-- Autocrafters will put the items in the container on the block the dropper is facing towards, otherwise the item will be dropped.
-- Powering the dropper makes it stop automatically crafting. (locking the dropper also has this effect)
+- Autocrafters will put the items inside of containers adjacent to the face of the dropper. This saves performance for servers so players don't need to have hoppers to pick up the items. The dropped item is also always spawned in the same location right in front of the dropper.
+- Powering the dropper will stop the autocrafting process even if there are still items inside.
+- Deny users the permission `automatedcrafting.makeautocrafters` to prevent them from making auto crafters!
+- There is a configuration file with various options to customize the plugin.
 
 <br/> <br/>
 
