@@ -1,6 +1,5 @@
 package nl.dgoossens.autocraft;
 
-import java.util.ArrayList;
 import java.util.List;
 import nl.dgoossens.autocraft.api.Autocrafter;
 import nl.dgoossens.autocraft.api.BlockPos;

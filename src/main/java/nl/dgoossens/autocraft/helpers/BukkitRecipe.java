@@ -11,8 +11,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import nl.dgoossens.autocraft.AutomatedCrafting;
 import nl.dgoossens.autocraft.api.CraftingRecipe;
+import nl.dgoossens.autocraft.api.Pair;
 import nl.dgoossens.autocraft.api.RecipeType;
-import org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -261,7 +261,7 @@ public class BukkitRecipe implements CraftingRecipe {
          */
         public RequirementSolution addRequirement(RecipeRequirement requirement, ItemStack item) {
             var newSol = new RequirementSolution(this);
-            newSol.history.add(Pair.of(requirement, item));
+            newSol.history.add(new Pair<>(requirement, item));
 
             // We need to take the amount of times we need this requirement times the amount in the requirement
             int amountToFind = requirement.amount * item.getAmount();
