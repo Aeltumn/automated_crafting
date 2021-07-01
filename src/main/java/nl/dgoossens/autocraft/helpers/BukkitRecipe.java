@@ -2,6 +2,7 @@ package nl.dgoossens.autocraft.helpers;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -42,6 +43,18 @@ public class BukkitRecipe implements CraftingRecipe {
 
     private static final Class<?> craftMetaBlockState = ReflectionHelper.getCraftBukkitClass("inventory.CraftMetaBlockState").orElse(null);
     private static final Field blockEntityTag = ReflectionHelper.getField(craftMetaBlockState, "blockEntityTag").orElse(null);
+
+    @Override
+    public String toString() {
+        return "BukkitRecipe{" +
+                "type=" + type +
+                ", result=" + result +
+                ", requirements=" + requirements +
+                ", pattern=" + Arrays.toString(pattern) +
+                ", key=" + key +
+                ", ingredients=" + ingredients +
+                '}';
+    }
 
     public BukkitRecipe(ItemStack result, String[] pattern, Map<Character, Collection<ItemStack>> key) {
         type = RecipeType.SHAPED;
@@ -326,7 +339,7 @@ public class BukkitRecipe implements CraftingRecipe {
          */
         public void applyTo(Inventory inv) {
             for (int i = 0; i < state.length; i++) {
-                inv.getStorageContents()[i] = state[i];
+                inv.setItem(i, state[i]);
             }
         }
 
@@ -341,6 +354,15 @@ public class BukkitRecipe implements CraftingRecipe {
             var remainingItem = input.getCraftingRemainingItem();
             if (remainingItem == null) return null;
             return new ItemStack(remainingItem, amount);
+        }
+
+        @Override
+        public String toString() {
+            return "RequirementSolution{" +
+                    "history=" + history +
+                    ", containerItems=" + containerItems +
+                    ", state=" + Arrays.toString(state) +
+                    '}';
         }
     }
 
@@ -369,6 +391,14 @@ public class BukkitRecipe implements CraftingRecipe {
          */
         public List<RequirementSolution> getSolutions(Collection<RequirementSolution> solutions) {
             return solutions.stream().flatMap(base -> item.stream().filter(it -> base.test(this, it)).map(it -> base.addRequirement(this, it))).collect(Collectors.toList());
+        }
+
+        @Override
+        public String toString() {
+            return "RecipeRequirement{" +
+                    "item=" + item +
+                    ", amount=" + amount +
+                    '}';
         }
     }
 

@@ -6,7 +6,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import nl.dgoossens.autocraft.api.CraftingRecipe;
 import nl.dgoossens.autocraft.api.RecipeType;
-import nl.dgoossens.autocraft.compat.CustomCraftingCompat;
 import nl.dgoossens.autocraft.helpers.BukkitRecipe;
 import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
@@ -23,7 +22,7 @@ public class RecipeLoader {
         instance = inst;
 
         //We load the recipes the first tick after the server is done starting so
-        //all recipes are loaded from datapacks. We don't load asyncrhonously.
+        //all recipes are loaded from data packs. We don't load asynchronously.
         Bukkit.getScheduler().runTask(inst, () -> {
             reload(null);
         });
@@ -77,16 +76,12 @@ public class RecipeLoader {
         long j = loadedRecipes.size();
         if (j > 0) {
             if (listener != null)
-                listener.sendMessage("(Re)loaded " + j + " bukkit recipes, took " + (System.currentTimeMillis() - t) + " ms...");
-            instance.getLogger().info("(Re)loaded " + j + " bukkit recipes, took " + (System.currentTimeMillis() - t) + " ms...");
+                listener.sendMessage("(Re)loaded " + j + " recipes, took " + (System.currentTimeMillis() - t) + " ms...");
+            instance.getLogger().info("(Re)loaded " + j + " recipes, took " + (System.currentTimeMillis() - t) + " ms...");
         }
 
         //Set up for next iteration
         t = System.currentTimeMillis();
-
-        //Custom compatibility
-        if (Bukkit.getPluginManager().isPluginEnabled("CustomCrafting"))
-            loadedRecipes.addAll(new CustomCraftingCompat().load(this));
 
         //Check if something was loaded this iteration
         j = loadedRecipes.size() - j;
