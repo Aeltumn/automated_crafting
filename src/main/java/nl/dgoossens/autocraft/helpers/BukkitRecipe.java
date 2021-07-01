@@ -294,7 +294,7 @@ public class BukkitRecipe implements CraftingRecipe {
                     if (cap >= 0) {
                         var containerItem = getContainerItem(item.getType(), cap);
                         if (containerItem != null) {
-                            containerItems.add(containerItem);
+                            newSol.containerItems.add(containerItem);
                         }
                     }
 
