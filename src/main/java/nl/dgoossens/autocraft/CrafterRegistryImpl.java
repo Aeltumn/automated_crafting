@@ -59,6 +59,12 @@ public class CrafterRegistryImpl extends CrafterRegistry {
             else player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText("Autocrafter has redstone signal blocking it"));
             return true;
         }
+
+        if (!ConfigFile.isMaterialAllowed(m.getType())) {
+            player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText("Crafting this item is disabled"));
+            return true;
+        }
+
         final Set<CraftingRecipe> recipes = recipeLoader.getRecipesFor(m);
         if (recipes == null || recipes.size() == 0) {
             player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText("Autocrafter can't craft this item"));

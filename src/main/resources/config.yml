@@ -5,3 +5,6 @@ alternate-blocks:
 
 # The amount of ticks between activations of all autocrafters (every tick is 1/20th of a second)
 ticks-per-craft: 27
+
+# A list of all materials that can not be crafted by autocrafters
+blocked-materials: []

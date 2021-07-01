@@ -40,6 +40,7 @@ public class MainCrafterTick extends BukkitRunnable {
 
                     for (Autocrafter a : m.getInChunk(ci)) {
                         if (a.isBroken()) continue; //Ignore broken ones.
+
                         BlockPos position = a.getPosition();
                         Block bl = ch.getBlock(position.getX(), position.getY(), position.getZ());
                         ItemStack item = a.getItem();
@@ -53,6 +54,10 @@ public class MainCrafterTick extends BukkitRunnable {
                         final Container container = (Container) bl.getState();
                         if (container.isLocked() || bl.getBlockPower() > 0)
                             continue; //If locked or powered we don't craft.
+
+                        // Never craft a material that is banned
+                        if (!ConfigFile.isMaterialAllowed(item.getType()))
+                            continue;
 
                         for (CraftingRecipe recipe : rl.getRecipesFor(item)) {
                             if (recipe == null) continue;
