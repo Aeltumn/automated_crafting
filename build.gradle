@@ -7,7 +7,7 @@ plugins {
 }
 
 group 'nl.dgoossens'
-version '2.4'
+version '2.5'
 
 sourceCompatibility = 16
 compileJava.options.encoding = 'UTF-8'
