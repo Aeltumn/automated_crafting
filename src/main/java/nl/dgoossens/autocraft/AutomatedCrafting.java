@@ -28,15 +28,6 @@ public class AutomatedCrafting extends JavaPlugin {
     public void onEnable() {
         INSTANCE = this;
 
-        //A little reward for the folks that don't bother to include the supported versions.
-        if (ReflectionHelper.getVersion().startsWith("v1_8")) {
-            getLogger().severe("This plugin doesn't support 1.8 and never will, update to 1.12+ or find another plugin.");
-            getPluginLoader().disablePlugin(this);
-            Bukkit.shutdown();
-            return;
-        }
-
-        //Setup config
         saveDefaultConfig();
         reloadConfig();
 
@@ -51,6 +42,8 @@ public class AutomatedCrafting extends JavaPlugin {
         if (registry.isDirty()) {
             registry.forceSave();
         }
+
+        INSTANCE = null;
     }
 
     @Override
