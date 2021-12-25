@@ -1,7 +1,5 @@
 package nl.dgoossens.autocraft.api;
 
-import java.util.List;
-
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;

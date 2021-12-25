@@ -13,10 +13,10 @@ public interface CraftSolution {
     /**
      * Applies this solution to the given inventory.
      */
-    public void applyTo(Inventory inv);
+    void applyTo(Inventory inv);
 
     /**
      * Returns the list of container items created by this solution.
      */
-    public List<ItemStack> getContainerItems();
+    List<ItemStack> getContainerItems();
 }

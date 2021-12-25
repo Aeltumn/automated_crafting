@@ -30,22 +30,6 @@ public class BlockPos {
         z = l.getZ();
     }
 
-    public int getX() {
-        return x;
-    }
-
-    public int getY() {
-        return y;
-    }
-
-    public int getZ() {
-        return z;
-    }
-
-    public BlockPos subtract(BlockPos other) {
-        return new BlockPos(x - other.x, y - other.y, z - other.z);
-    }
-
     public static BlockPos fromLong(long l) {
         return new BlockPos(unpackX(l), unpackY(l), unpackZ(l));
     }
@@ -60,6 +44,22 @@ public class BlockPos {
 
     private static int unpackZ(long v) {
         return (int) (v << 64 - NUM_Y_BITS - NUM_Z_BITS >> 64 - NUM_Z_BITS);
+    }
+
+    public int getX() {
+        return x;
+    }
+
+    public int getY() {
+        return y;
+    }
+
+    public int getZ() {
+        return z;
+    }
+
+    public BlockPos subtract(BlockPos other) {
+        return new BlockPos(x - other.x, y - other.y, z - other.z);
     }
 
     public long toLong() {

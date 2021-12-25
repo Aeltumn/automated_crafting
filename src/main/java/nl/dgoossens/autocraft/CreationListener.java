@@ -1,11 +1,9 @@
 package nl.dgoossens.autocraft;
 
-import nl.dgoossens.autocraft.api.BlockPos;
 import org.bukkit.Material;
 import org.bukkit.Nameable;
 import org.bukkit.block.*;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ItemFrame;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -30,7 +28,7 @@ public class CreationListener implements Listener {
     public static boolean isValidBlock(final Block bl, boolean existing) {
         //If the block is not any of the allowed states.
         if ((!ConfigFile.allowDispensers() || !(bl.getState() instanceof Dispenser)) &&
-           (!ConfigFile.allowChests() || !(bl.getState() instanceof Chest)) &&
+                (!ConfigFile.allowChests() || !(bl.getState() instanceof Chest)) &&
                 !(bl.getState() instanceof Dropper))
             return false;
 

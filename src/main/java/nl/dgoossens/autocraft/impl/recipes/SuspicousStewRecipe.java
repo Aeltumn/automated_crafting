@@ -19,13 +19,6 @@ public class SuspicousStewRecipe extends CustomRecipe {
 
     public static final Map<Material, PotionEffect> INGREDIENTS = new HashMap<>();
 
-    /**
-     * Adds a new suspcious stew type.
-     */
-    public static void addIngredient(Material material, PotionEffectType type, int duration) {
-        INGREDIENTS.put(material, new PotionEffect(type, type.isInstant() ? duration : duration * 20, 0, false, true));
-    }
-
     static {
         addIngredient(Material.DANDELION, PotionEffectType.SATURATION, 7);
         addIngredient(Material.POPPY, PotionEffectType.NIGHT_VISION, 5);
@@ -47,6 +40,13 @@ public class SuspicousStewRecipe extends CustomRecipe {
     public SuspicousStewRecipe(NamespacedKey key, Material ingredient) {
         super(key);
         this.ingredient = ingredient;
+    }
+
+    /**
+     * Adds a new suspcious stew type.
+     */
+    public static void addIngredient(Material material, PotionEffectType type, int duration) {
+        INGREDIENTS.put(material, new PotionEffect(type, type.isInstant() ? duration : duration * 20, 0, false, true));
     }
 
     @Override

@@ -1,10 +1,7 @@
 package nl.dgoossens.autocraft.helpers;
 
 import org.bukkit.Material;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-
-import javax.annotation.Nonnull;
 
 /**
  * Provides various utility functions.

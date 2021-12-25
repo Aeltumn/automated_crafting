@@ -1,13 +1,12 @@
 package nl.dgoossens.autocraft.helpers;
 
+import org.bukkit.Bukkit;
+
+import javax.annotation.Nullable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Optional;
-import javax.annotation.Nullable;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.entity.Player;
 
 /**
  * The ReflectionHelper is a utility to aid in using reflection to interact
@@ -16,11 +15,10 @@ import org.bukkit.entity.Player;
  * substantial.
  */
 public final class ReflectionHelper {
-    private static String version = null; //`v1_12_R1`
-    private static String cbPackage = ""; //`org.bukkit.craftbukkit.v1_12_R1.`
-
     private static final String NMS_STRING = "net.minecraft.";
     private static final String CB_STRING = "org.bukkit.craftbukkit.";
+    private static String version = null; //`v1_12_R1`
+    private static String cbPackage = ""; //`org.bukkit.craftbukkit.v1_12_R1.`
 
     /**
      * Loads the version this utility looks at to determine the class
@@ -31,7 +29,8 @@ public final class ReflectionHelper {
         int s = 0;
         if (full.startsWith(NMS_STRING)) s = NMS_STRING.length();
         if (full.startsWith(CB_STRING)) s = CB_STRING.length();
-        if (s == 0) throw new UnsupportedOperationException("Tried to load version of NMS/CB package without passing a usable package.");
+        if (s == 0)
+            throw new UnsupportedOperationException("Tried to load version of NMS/CB package without passing a usable package.");
 
         for (int c = s; c < full.length(); c++) {
             final char ch = full.charAt(c);
@@ -83,7 +82,8 @@ public final class ReflectionHelper {
             Method m = klass.getDeclaredMethod(methodName, parameters);
             m.setAccessible(true);
             return Optional.of(m);
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         return Optional.empty();
     }
 
@@ -97,7 +97,8 @@ public final class ReflectionHelper {
             Constructor<T> c = klass.getDeclaredConstructor(parameters);
             c.setAccessible(true);
             return Optional.of(c);
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         return Optional.empty();
     }
 
@@ -111,7 +112,8 @@ public final class ReflectionHelper {
             Field f = klass.getDeclaredField(fieldName);
             f.setAccessible(true);
             return Optional.of(f);
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         return Optional.empty();
     }
 
@@ -122,7 +124,8 @@ public final class ReflectionHelper {
     public static Optional<Object> getFieldValue(Object object, Field field) {
         try {
             return Optional.ofNullable(field.get(object));
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         return Optional.empty();
     }
 
@@ -132,6 +135,7 @@ public final class ReflectionHelper {
     public static void setField(Object object, Field field, Object value) {
         try {
             field.set(object, value);
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 }

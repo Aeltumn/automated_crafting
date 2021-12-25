@@ -1,15 +1,5 @@
 package nl.dgoossens.autocraft.impl;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 import nl.dgoossens.autocraft.AutomatedCrafting;
 import nl.dgoossens.autocraft.api.CraftSolution;
 import nl.dgoossens.autocraft.api.CraftingRecipe;
@@ -20,13 +10,12 @@ import nl.dgoossens.autocraft.helpers.Utils;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.Recipe;
-import org.bukkit.inventory.RecipeChoice;
-import org.bukkit.inventory.ShapedRecipe;
-import org.bukkit.inventory.ShapelessRecipe;
+import org.bukkit.inventory.*;
 import org.bukkit.inventory.meta.BlockStateMeta;
+
+import java.lang.reflect.Field;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Build a recipe from item stacks in code.
@@ -35,32 +24,17 @@ import org.bukkit.inventory.meta.BlockStateMeta;
  * inventory as for taking them.
  */
 public class BukkitRecipe implements CraftingRecipe {
+    private static final Class<?> craftMetaBlockState = ReflectionHelper.getCraftBukkitClass("inventory.CraftMetaBlockState").orElse(null);
+    private static final Field blockEntityTag = ReflectionHelper.getField(craftMetaBlockState, "blockEntityTag").orElse(null);
+    private final ItemStack result;
     private NamespacedKey namespacedKey = null;
     private RecipeType type = RecipeType.UNKNOWN;
-    private final ItemStack result;
     private List<RecipeRequirement> requirements;
-
     //Shaped Recipes
     private String[] pattern;
     private Map<Character, Collection<ItemStack>> key;
-
     //Shapeless Recipes
     private Collection<Collection<ItemStack>> ingredients;
-
-    private static final Class<?> craftMetaBlockState = ReflectionHelper.getCraftBukkitClass("inventory.CraftMetaBlockState").orElse(null);
-    private static final Field blockEntityTag = ReflectionHelper.getField(craftMetaBlockState, "blockEntityTag").orElse(null);
-
-    @Override
-    public String toString() {
-        return "BukkitRecipe{" +
-                "type=" + type +
-                ", result=" + result +
-                ", requirements=" + requirements +
-                ", pattern=" + Arrays.toString(pattern) +
-                ", key=" + key +
-                ", ingredients=" + ingredients +
-                '}';
-    }
 
     public BukkitRecipe(NamespacedKey namespacedKey, ItemStack result, String[] pattern, Map<Character, Collection<ItemStack>> key) {
         this.namespacedKey = namespacedKey;
@@ -127,6 +101,18 @@ public class BukkitRecipe implements CraftingRecipe {
                 ingredients.add(values);
             }
         }
+    }
+
+    @Override
+    public String toString() {
+        return "BukkitRecipe{" +
+                "type=" + type +
+                ", result=" + result +
+                ", requirements=" + requirements +
+                ", pattern=" + Arrays.toString(pattern) +
+                ", key=" + key +
+                ", ingredients=" + ingredients +
+                '}';
     }
 
     public RecipeType getType() {
@@ -272,6 +258,19 @@ public class BukkitRecipe implements CraftingRecipe {
             containerItems.addAll(old.containerItems);
         }
 
+        /**
+         * Get the 'container item' which is the item
+         * left in the crafting area after an item is used
+         * in a crafting recipe.
+         * <p>
+         * Returns null if nothing/air is the container item.
+         */
+        private static ItemStack getContainerItem(Material input, int amount) {
+            var remainingItem = input.getCraftingRemainingItem();
+            if (remainingItem == null) return null;
+            return new ItemStack(remainingItem, amount);
+        }
+
         @Override
         public List<ItemStack> getContainerItems() {
             return containerItems;
@@ -347,19 +346,6 @@ public class BukkitRecipe implements CraftingRecipe {
             for (int i = 0; i < state.length; i++) {
                 inv.setItem(i, state[i]);
             }
-        }
-
-        /**
-         * Get the 'container item' which is the item
-         * left in the crafting area after an item is used
-         * in a crafting recipe.
-         * <p>
-         * Returns null if nothing/air is the container item.
-         */
-        private static ItemStack getContainerItem(Material input, int amount) {
-            var remainingItem = input.getCraftingRemainingItem();
-            if (remainingItem == null) return null;
-            return new ItemStack(remainingItem, amount);
         }
 
         @Override

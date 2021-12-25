@@ -1,10 +1,11 @@
 package nl.dgoossens.autocraft.api;
 
+import org.bukkit.inventory.ItemStack;
+
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
-import javax.annotation.Nullable;
-import org.bukkit.inventory.ItemStack;
 
 /**
  * An object storing information on all autocrafters in a single world.

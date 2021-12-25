@@ -1,9 +1,5 @@
 package nl.dgoossens.autocraft.api;
 
-import java.io.File;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import nl.dgoossens.autocraft.AutomatedCrafting;
 import nl.dgoossens.autocraft.RecipeLoader;
 import org.bukkit.Bukkit;
@@ -14,17 +10,21 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.io.File;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * Manages the existance of all autocrafters.
  */
 public abstract class CrafterRegistry {
     private static final long SAVE_DELAY = (150) * 1000; //Wait 2.5 minutes = 150 seconds
-
-    protected ConcurrentHashMap<String, AutocrafterPositions> crafters = new ConcurrentHashMap<>();
     protected final RecipeLoader recipeLoader;
     protected final File file;
-    protected long saveTime = Long.MAX_VALUE;
     private final BukkitTask saveTask;
+    protected ConcurrentHashMap<String, AutocrafterPositions> crafters = new ConcurrentHashMap<>();
+    protected long saveTime = Long.MAX_VALUE;
 
     public CrafterRegistry() {
         recipeLoader = AutomatedCrafting.INSTANCE.getRecipeLoader();
