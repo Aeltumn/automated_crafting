@@ -109,7 +109,7 @@ public class CreationListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onClickItemFrame(final PlayerInteractEntityEvent e) {
         // ignore clicking non-item frames
-        if (!e.getRightClicked().getType().equals(EntityType.ITEM_FRAME)) {
+        if (!(e.getRightClicked() instanceof ItemFrame)) {
             return;
         }
 
