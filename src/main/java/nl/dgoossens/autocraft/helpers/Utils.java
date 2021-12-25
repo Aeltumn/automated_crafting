@@ -11,12 +11,38 @@ import javax.annotation.Nonnull;
  */
 public class Utils {
     /**
-     * Takes the given item from the given inventory.
+     * Adds the given item to the given inventory. Returns whether all items were added.
      */
-    public static void takeItem(Inventory inv, ItemStack it) {
-        if (it == null || it.getType() == Material.AIR) return;
+    public static boolean addItem(ItemStack[] storage, ItemStack it) {
+        if (it == null || it.getType() == Material.AIR) return true;
 
-        ItemStack[] storage = inv.getStorageContents();
+        int amountToAdd = it.getAmount();
+        for (var i = 0; i < storage.length; i++) {
+            var itemStack = storage[i];
+            if (itemStack == null) {
+                // If the slot is empty we can put it here immediately
+                it.setAmount(amountToAdd);
+                storage[i] = it;
+                return true;
+            } else if (itemStack.isSimilar(it)) {
+                // If there is an item we attempt to fill up the stack
+                var toAdd = Math.min(itemStack.getMaxStackSize() - itemStack.getAmount(), amountToAdd);
+                itemStack.setAmount(itemStack.getAmount() + toAdd);
+                amountToAdd -= toAdd;
+
+                // We can stop when we have added enough
+                if (amountToAdd <= 0) return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Takes the given item from the given inventory.  Returns whether all items were taken.
+     */
+    public static boolean takeItem(ItemStack[] storage, ItemStack it) {
+        if (it == null || it.getType() == Material.AIR) return true;
+
         int amountToTake = it.getAmount();
         for (var i = 0; i < storage.length; i++) {
             var itemStack = storage[i];
@@ -34,29 +60,7 @@ public class Utils {
                 amountToTake -= toTake;
 
                 // We can stop when we have taken enough
-                if (amountToTake <= 0) break;
-            }
-        }
-        inv.setStorageContents(storage);
-    }
-
-    /**
-     * Returns whether we can still fit a given item into an inventory.
-     */
-    public static boolean canInventorySupport(Inventory inv, ItemStack it) {
-        if (it == null || it.getType() == Material.AIR) return true;
-
-        ItemStack[] storage = inv.getStorageContents();
-        int amountToDeposit = it.getAmount();
-        for (ItemStack itemStack : storage) {
-            if (itemStack == null) return true;
-            if (itemStack.isSimilar(it)) {
-                // Remove how much we can still fit on stack from the amount to
-                // deposit
-                amountToDeposit -= (itemStack.getMaxStackSize() - itemStack.getAmount());
-
-                // If we deposited everything we fit it in.
-                if (amountToDeposit <= 0) return true;
+                if (amountToTake <= 0) return true;
             }
         }
         return false;

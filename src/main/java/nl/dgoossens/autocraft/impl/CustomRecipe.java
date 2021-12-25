@@ -46,9 +46,11 @@ public abstract class CustomRecipe implements CraftingRecipe, CraftSolution {
 
     @Override
     public void applyTo(Inventory inv) {
+        var contents = inv.getStorageContents();
         for (var item : getItems()) {
-            Utils.takeItem(inv, item);
+            Utils.takeItem(contents, item);
         }
+        inv.setStorageContents(contents);
     }
 
     @Override

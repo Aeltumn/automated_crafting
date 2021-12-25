@@ -80,8 +80,17 @@ public class Autocrafter {
             // Check if there's a container being output into and if it can fit the
             // items to put in. If there is a container we only craft if we can fit it.
             if (loc.getBlock().getState() instanceof InventoryHolder c) {
+                // Try to add all items to a copy of the inventory in order so we know whether all
+                // output items can fit when given together.
+                var inventoryCopy = new ItemStack[c.getInventory().getStorageContents().length];
+                for (var i = 0; i < inventoryCopy.length; i++) {
+                    var it = c.getInventory().getStorageContents()[i];
+                    if (it != null) {
+                        inventoryCopy[i] = it.clone();
+                    }
+                }
                 for (var item : output) {
-                    if (!Utils.canInventorySupport(c.getInventory(), item)) {
+                    if (!Utils.addItem(inventoryCopy, item)) {
                         continue outer;
                     }
                 }
