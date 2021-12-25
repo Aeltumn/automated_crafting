@@ -3,11 +3,7 @@ package nl.dgoossens.autocraft;
 import nl.dgoossens.autocraft.api.BlockPos;
 import org.bukkit.Material;
 import org.bukkit.Nameable;
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockState;
-import org.bukkit.block.Container;
-import org.bukkit.block.Dispenser;
-import org.bukkit.block.Dropper;
+import org.bukkit.block.*;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ItemFrame;
@@ -32,15 +28,14 @@ public class CreationListener implements Listener {
      * @param existing Only return true if this block is also already an autocrafter.
      */
     public static boolean isValidBlock(final Block bl, boolean existing) {
-        final BlockPos bp = new BlockPos(bl);
-
         //If the block is not any of the allowed states.
         if ((!ConfigFile.allowDispensers() || !(bl.getState() instanceof Dispenser)) &&
+           (!ConfigFile.allowChests() || !(bl.getState() instanceof Chest)) &&
                 !(bl.getState() instanceof Dropper))
             return false;
 
         //Test if we can find an autocrafter on this block if applicable.
-        return !existing || AutomatedCrafting.INSTANCE.getCrafterRegistry().getAutocrafters(bl.getWorld()).map(f -> f.get(bp) != null).orElse(false);
+        return !existing || AutomatedCrafting.INSTANCE.getCrafterRegistry().isAutocrafter(bl);
     }
 
     //This method specifically is needed because when droppers put the item directly into the neighbouring container the BlockDispenseEvent is not fired.
@@ -49,8 +44,12 @@ public class CreationListener implements Listener {
         //Autocrafters can't drop items normally. This is to avoid dispensing ingredients when powered.
         if (e.getSource().getHolder() instanceof Container) {
             Block bl = ((Container) e.getSource().getHolder()).getBlock();
-            if (isValidBlock(bl, true))
+            if (isValidBlock(bl, true)) {
                 e.setCancelled(true);
+                if (ConfigFile.craftOnRedstonePulse()) {
+                    AutomatedCrafting.INSTANCE.getCrafterRegistry().tick(bl);
+                }
+            }
         }
     }
 
@@ -58,8 +57,12 @@ public class CreationListener implements Listener {
     public void onDispense(final BlockDispenseEvent e) {
         //Autocrafters can't drop items normally. This is to avoid dispensing ingredients when powered.
         Block bl = e.getBlock();
-        if (isValidBlock(bl, true))
+        if (isValidBlock(bl, true)) {
             e.setCancelled(true);
+            if (ConfigFile.craftOnRedstonePulse()) {
+                AutomatedCrafting.INSTANCE.getCrafterRegistry().tick(bl);
+            }
+        }
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)

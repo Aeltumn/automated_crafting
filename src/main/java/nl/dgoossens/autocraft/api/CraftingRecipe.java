@@ -1,12 +1,19 @@
 package nl.dgoossens.autocraft.api;
 
 import java.util.List;
+
+import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
 public interface CraftingRecipe {
     /**
-     * The type of this recipe.
+     * Returns the key of this recipe.
+     */
+    NamespacedKey getKey();
+
+    /**
+     * Returns the type of this recipe.
      */
     RecipeType getType();
 
@@ -27,8 +34,7 @@ public interface CraftingRecipe {
     boolean containsRequirements(Inventory inv);
 
     /**
-     * Take the materials from the inventory that are required for this craft.
-     * Put resulting container items into the returned array list.
+     * Returns the solution for this crafting recipe based on the given inventory.
      */
-    List<ItemStack> takeMaterials(Inventory inv);
+    CraftSolution findSolution(Inventory inv);
 }

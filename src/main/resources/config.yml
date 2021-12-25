@@ -2,9 +2,14 @@
 alternate-blocks:
   # If true, dispensers can be turned into autocrafters
   allowDispensers: false
+  # If true, chests can be turned into autocrafters. Incompatible with `craft-on-redstone-pulse`!
+  allowChests: false
 
 # The amount of ticks between activations of all autocrafters (every tick is 1/20th of a second)
 ticks-per-craft: 27
+
+# Enables autocrafters activating whenever they are activated by redstone
+craft-on-redstone-pulse: false
 
 # A list of all materials that can not be crafted by autocrafters
 blocked-materials: []

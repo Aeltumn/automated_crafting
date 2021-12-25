@@ -1,6 +1,18 @@
 package nl.dgoossens.autocraft.api;
 
+import nl.dgoossens.autocraft.AutomatedCrafting;
+import nl.dgoossens.autocraft.ConfigFile;
+import nl.dgoossens.autocraft.CreationListener;
+import nl.dgoossens.autocraft.helpers.Utils;
+import org.bukkit.Chunk;
+import org.bukkit.Location;
+import org.bukkit.block.Block;
+import org.bukkit.block.Container;
+import org.bukkit.block.data.Directional;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+
+import java.util.ArrayList;
 
 /**
  * Stores all the data we have on an individual autocrafter.
@@ -19,11 +31,94 @@ public class Autocrafter {
         this(BlockPos.fromLong(l), item);
     }
 
+    /**
+     * Ticks this auto-crafter, making it craft an item.
+     */
+    public void tick(Chunk chunk) {
+        // Don't tick if broken
+        if (isBroken()) return;
+
+        Block bl = chunk.getBlock(position.getX(), position.getY(), position.getZ());
+
+        //If the block was broken we mark it broken and no longer save it next time.
+        if (!CreationListener.isValidBlock(bl, false) || !(bl.getState() instanceof final Container container)) {
+            markBroken();
+            return;
+        }
+
+        // If locked we don't craft.
+        if (container.isLocked())
+            return;
+
+        // If powered and not crafting based on signal we don't craft.
+        if (!ConfigFile.craftOnRedstonePulse()) {
+            if (bl.getBlockPower() > 0) return;
+        }
+
+        // Never craft a material that is banned
+        if (!ConfigFile.isMaterialAllowed(item.getType())) return;
+
+        outer:
+        for (CraftingRecipe recipe : AutomatedCrafting.INSTANCE.getRecipeLoader().getRecipesFor(item)) {
+            if (recipe == null) continue;
+
+            // Check if the dropper contains all required items to craft the result.
+            if (!recipe.containsRequirements(container.getInventory()))
+                continue;
+
+            final Directional autocrafter = (Directional) bl.getBlockData();
+            final Location loc = bl.getLocation().getBlock().getRelative(autocrafter.getFacing()).getLocation();
+
+            // Determine what craft we can perform
+            var solution = recipe.findSolution(container.getInventory());
+            ArrayList<ItemStack> output = new ArrayList<>(solution.getContainerItems());
+            output.add(recipe.getResultDrop());
+
+            // Remove null items
+            output.removeIf(f -> f == null || f.getType().isAir());
+
+            // Check if there's a container being output into and if it can fit the
+            // items to put in. If there is a container we only craft if we can fit it.
+            if (loc.getBlock().getState() instanceof InventoryHolder c) {
+                for (var item : output) {
+                    if (!Utils.canInventorySupport(c.getInventory(), item)) {
+                        continue outer;
+                    }
+                }
+            }
+
+            // Perform the actual crafting
+            solution.applyTo(container.getInventory());
+
+            if (loc.getBlock().getState() instanceof InventoryHolder c) {
+                // Put the output in the output container
+                for (var item : output) {
+                    c.getInventory().addItem(item);
+                }
+            } else {
+                // Drop the items if no container wants them
+                if (loc.getWorld() != null) {
+                    for (var item : output) {
+                        loc.getWorld().dropItem(loc.clone().add(0.5, 0.25, 0.5), item);
+                    }
+                }
+            }
+
+            // If a recipe was found we stop here, never craft two things
+            break;
+        }
+    }
+
+    /**
+     * Returns whether this autocrafter is broken.
+     */
     public boolean isBroken() {
         return broken;
     }
 
-    //Broken autocrafters will not be saved next time.
+    /**
+     * Marks this autocrafter as broken. A broken autocrafter is not saved to disk.
+     */
     public void markBroken() {
         broken = true;
     }

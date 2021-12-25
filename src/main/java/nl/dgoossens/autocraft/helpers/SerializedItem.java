@@ -2,6 +2,9 @@ package nl.dgoossens.autocraft.helpers;
 
 import java.io.Serializable;
 import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.stream.Collectors;
+
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
@@ -17,11 +20,10 @@ public final class SerializedItem implements Serializable {
     private static final Class<?> mojangsonParser = ReflectionHelper.getNMSClass("nbt.MojangsonParser").orElse(null);
     private static final Class<?> nbtTagCompound = ReflectionHelper.getNMSClass("nbt.NBTTagCompound").orElse(null);
     private static final Class<?> itemStack = ReflectionHelper.getNMSClass("world.item.ItemStack").orElse(null);
-    private static final Method parseMethod = ReflectionHelper.getMethod(mojangsonParser, "parse", String.class).orElse(null);
+    private static final Method parseMethod = ReflectionHelper.getMethod(mojangsonParser, "a", String.class).orElse(null);
     private static final Method asNMSCopyMethod = ReflectionHelper.getMethod(craftItemStack, "asNMSCopy", ItemStack.class).orElse(null);
-    private static final Method hasTagMethod = ReflectionHelper.getMethod(itemStack, "hasTag").orElse(null);
-    private static final Method getTagMethod = ReflectionHelper.getMethod(itemStack, "getTag").orElse(null);
-    private static final Method setTagMethod = ReflectionHelper.getMethod(itemStack, "setTag", nbtTagCompound).orElse(null);
+    private static final Method getTagMethod = ReflectionHelper.getMethod(itemStack, "getTagClone").orElse(null);
+    private static final Method setTagMethod = ReflectionHelper.getMethod(itemStack, "setTagClone", nbtTagCompound).orElse(null);
     private static final Method asCraftMirrorMethod = ReflectionHelper.getMethod(craftItemStack, "asCraftMirror", itemStack).orElse(null);
 
     //All other properties of an item are stored in NBT but not material, durability or amount.
@@ -68,16 +70,16 @@ public final class SerializedItem implements Serializable {
         }
 
         ItemStack ret = new ItemStack(materialCache, amount, durability);
-
-
-        try {
-            Object tag = parseMethod.invoke(null, nbt);
-            Object nmsStack = asNMSCopyMethod.invoke(null, ret);
-            if (!tag.toString().equalsIgnoreCase("{}")) setTagMethod.invoke(nmsStack, tag);
-            else setTagMethod.invoke(nmsStack, NULL_OBJECT);
-            ret = (ItemStack) asCraftMirrorMethod.invoke(null, nmsStack);
-        } catch (Exception x) {
-            x.printStackTrace();
+        if (nbt != null) {
+            try {
+                Object tag = parseMethod.invoke(null, nbt);
+                Object nmsStack = asNMSCopyMethod.invoke(null, ret);
+                if (!tag.toString().equalsIgnoreCase("{}")) setTagMethod.invoke(nmsStack, tag);
+                else setTagMethod.invoke(nmsStack, NULL_OBJECT);
+                ret = (ItemStack) asCraftMirrorMethod.invoke(null, nmsStack);
+            } catch (Exception x) {
+                x.printStackTrace();
+            }
         }
         return ret;
     }
@@ -94,10 +96,10 @@ public final class SerializedItem implements Serializable {
         durability = copy.getDurability();
         try {
             Object nmsStack = asNMSCopyMethod.invoke(null, item);
-            Object tag = nbtTagCompound.newInstance();
-            if ((boolean) hasTagMethod.invoke(nmsStack))
-                tag = getTagMethod.invoke(nmsStack);
-            nbt = tag.toString();
+            Object tag = getTagMethod.invoke(nmsStack);
+            if (tag != null) {
+                nbt = tag.toString();
+            }
         } catch (Exception x) {
             x.printStackTrace();
         }

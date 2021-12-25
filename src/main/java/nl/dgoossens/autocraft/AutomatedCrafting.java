@@ -3,7 +3,7 @@ package nl.dgoossens.autocraft;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import nl.dgoossens.autocraft.api.CrafterRegistry;
-import nl.dgoossens.autocraft.helpers.ReflectionHelper;
+import nl.dgoossens.autocraft.impl.CrafterRegistryImpl;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -12,6 +12,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class AutomatedCrafting extends JavaPlugin {
     public static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
     public static AutomatedCrafting INSTANCE;
+
     private CrafterRegistry registry;
     private RecipeLoader recipeLoader;
 
@@ -43,6 +44,7 @@ public class AutomatedCrafting extends JavaPlugin {
             registry.forceSave();
         }
 
+        registry.shutdown();
         INSTANCE = null;
     }
 

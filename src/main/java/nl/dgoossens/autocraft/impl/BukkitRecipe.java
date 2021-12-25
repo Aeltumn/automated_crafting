@@ -1,4 +1,4 @@
-package nl.dgoossens.autocraft.helpers;
+package nl.dgoossens.autocraft.impl;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -11,10 +11,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import nl.dgoossens.autocraft.AutomatedCrafting;
+import nl.dgoossens.autocraft.api.CraftSolution;
 import nl.dgoossens.autocraft.api.CraftingRecipe;
 import nl.dgoossens.autocraft.api.Pair;
 import nl.dgoossens.autocraft.api.RecipeType;
+import nl.dgoossens.autocraft.helpers.ReflectionHelper;
+import nl.dgoossens.autocraft.helpers.Utils;
+import org.bukkit.Keyed;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
@@ -30,6 +35,7 @@ import org.bukkit.inventory.meta.BlockStateMeta;
  * inventory as for taking them.
  */
 public class BukkitRecipe implements CraftingRecipe {
+    private NamespacedKey namespacedKey = null;
     private RecipeType type = RecipeType.UNKNOWN;
     private final ItemStack result;
     private List<RecipeRequirement> requirements;
@@ -56,14 +62,16 @@ public class BukkitRecipe implements CraftingRecipe {
                 '}';
     }
 
-    public BukkitRecipe(ItemStack result, String[] pattern, Map<Character, Collection<ItemStack>> key) {
-        type = RecipeType.SHAPED;
+    public BukkitRecipe(NamespacedKey namespacedKey, ItemStack result, String[] pattern, Map<Character, Collection<ItemStack>> key) {
+        this.namespacedKey = namespacedKey;
+        this.type = RecipeType.SHAPED;
         this.result = result;
         this.pattern = pattern;
         this.key = key;
     }
 
-    public BukkitRecipe(ItemStack result, List<Collection<ItemStack>> ingredients) {
+    public BukkitRecipe(NamespacedKey namespacedKey, ItemStack result, List<Collection<ItemStack>> ingredients) {
+        this.namespacedKey = namespacedKey;
         type = RecipeType.SHAPELESS;
         this.result = result;
         this.ingredients = ingredients;
@@ -73,6 +81,7 @@ public class BukkitRecipe implements CraftingRecipe {
      * Build a recipe from a bukkit recipe.
      */
     public BukkitRecipe(Recipe bukkitRecipe) {
+        namespacedKey = ((Keyed) bukkitRecipe).getKey();
         result = bukkitRecipe.getResult();
         if (bukkitRecipe instanceof ShapedRecipe) {
             type = RecipeType.SHAPED;
@@ -143,7 +152,7 @@ public class BukkitRecipe implements CraftingRecipe {
                     // Test if all characters in the pattern show up in the recipe
                     occurrences.forEach((c, i) -> {
                         if (!key.containsKey(c)) {
-                            AutomatedCrafting.getInstance().warning("Warning shaped recipe with pattern [[" + String.join("], [", pattern) + "]] had character " + c + " in pattern but not in key map.");
+                            AutomatedCrafting.INSTANCE.warning("Warning shaped recipe with pattern [[" + String.join("], [", pattern) + "]] had character " + c + " in pattern but not in key map.");
                         }
                     });
 
@@ -151,7 +160,7 @@ public class BukkitRecipe implements CraftingRecipe {
                     // we multiply the requirement for the amount of times the character occurs in the pattern.
                     key.forEach((c, items) -> {
                         if (!occurrences.containsKey(c)) {
-                            AutomatedCrafting.getInstance().warning("Warning shaped recipe with pattern [[" + String.join("], [", pattern) + "]] had key " + c + " in key map but not in pattern.");
+                            AutomatedCrafting.INSTANCE.warning("Warning shaped recipe with pattern [[" + String.join("], [", pattern) + "]] had key " + c + " in key map but not in pattern.");
                         }
 
                         requirements.add(new RecipeRequirement(items, occurrences.getOrDefault(c, 0)));
@@ -184,7 +193,12 @@ public class BukkitRecipe implements CraftingRecipe {
     }
 
     @Override
-    public List<ItemStack> takeMaterials(Inventory inv) {
+    public NamespacedKey getKey() {
+        return namespacedKey;
+    }
+
+    @Override
+    public CraftSolution findSolution(Inventory inv) {
         var solutions = Collections.singletonList(new RequirementSolution(inv));
         for (var requirement : getRequirements()) {
             // Get all new permutations of the solutions with this new requirement
@@ -197,12 +211,8 @@ public class BukkitRecipe implements CraftingRecipe {
         }
 
         // Get the cheapest solution or the only solution if there is one (which is the case in most recipes)
-        var finalSolution = solutions.size() == 1 ? solutions.get(0) :
+        return solutions.size() == 1 ? solutions.get(0) :
                 solutions.stream().min(Comparator.comparing(RequirementSolution::getCost)).orElseThrow(() -> new UnsupportedOperationException("No solutions found, how?"));
-
-        // Take all items and return the created container items
-        finalSolution.applyTo(inv);
-        return finalSolution.getContainerItems();
     }
 
     @Override
@@ -222,7 +232,7 @@ public class BukkitRecipe implements CraftingRecipe {
             clone.setItemMeta(meta);
         }
 
-        return isSimilar(result, clone);
+        return Utils.isSimilar(result, clone);
     }
 
     @Override
@@ -230,7 +240,7 @@ public class BukkitRecipe implements CraftingRecipe {
         return result.clone();
     }
 
-    public static class RequirementSolution {
+    public static class RequirementSolution implements CraftSolution {
         private final List<Pair<RecipeRequirement, ItemStack>> history = new ArrayList<>();
         private final List<ItemStack> containerItems = new ArrayList<>();
         private final ItemStack[] state;
@@ -262,9 +272,7 @@ public class BukkitRecipe implements CraftingRecipe {
             containerItems.addAll(old.containerItems);
         }
 
-        /**
-         * Returns the list of container items created by this solution.
-         */
+        @Override
         public List<ItemStack> getContainerItems() {
             return containerItems;
         }
@@ -284,7 +292,7 @@ public class BukkitRecipe implements CraftingRecipe {
                 var it = newSol.state[j];
 
                 // If this item is similar we start taking it away
-                if (isSimilar(item, it)) {
+                if (Utils.isSimilar(item, it)) {
                     int cap = Math.min(it.getAmount(), amountToFind);
                     if (it.getAmount() - cap <= 0) newSol.state[j] = null;
                     else it.setAmount(it.getAmount() - cap);
@@ -315,7 +323,7 @@ public class BukkitRecipe implements CraftingRecipe {
 
             for (ItemStack it : state) {
                 //If any item in our array of valid items is similar to this item we have found our match.
-                if (isSimilar(item, it)) {
+                if (Utils.isSimilar(item, it)) {
                     amountToFind -= Math.min(it.getAmount(), amountToFind);
 
                     //If we have at least the amount of any valid item in this inventory we call it good.
@@ -334,9 +342,7 @@ public class BukkitRecipe implements CraftingRecipe {
             return history.stream().mapToInt(it -> it.getKey().amount * it.getValue().getAmount()).sum();
         }
 
-        /**
-         * Applies this solution to the given inventory.
-         */
+        @Override
         public void applyTo(Inventory inv) {
             for (int i = 0; i < state.length; i++) {
                 inv.setItem(i, state[i]);
@@ -400,20 +406,5 @@ public class BukkitRecipe implements CraftingRecipe {
                     ", amount=" + amount +
                     '}';
         }
-    }
-
-    /**
-     * Custom isSimilar implementation that supports ingredients with a
-     * durability of -1.
-     */
-    public static boolean isSimilar(ItemStack a, ItemStack b) {
-        // Documentation is a bit vague but it appears ingredients with -1 mean
-        // the metadata isn't important and it should accept any type. We always
-        // pass the ingredient as a so if a has a durability of -1 we only compare
-        // materials. (Bukkit changes -1 to Short.MAX_VALUE)
-        if (a != null && b != null && a.getDurability() == Short.MAX_VALUE) {
-            return a.getType() == b.getType();
-        }
-        return a != null && a.isSimilar(b);
     }
 }

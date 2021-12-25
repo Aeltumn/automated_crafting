@@ -1,27 +1,16 @@
-package nl.dgoossens.autocraft;
+package nl.dgoossens.autocraft.impl;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
-import nl.dgoossens.autocraft.api.Autocrafter;
-import nl.dgoossens.autocraft.api.AutocrafterPositions;
-import nl.dgoossens.autocraft.api.BlockPos;
-import nl.dgoossens.autocraft.api.ChunkIdentifier;
-import nl.dgoossens.autocraft.api.CrafterRegistry;
-import nl.dgoossens.autocraft.api.CraftingRecipe;
+import nl.dgoossens.autocraft.AutomatedCrafting;
+import nl.dgoossens.autocraft.ConfigFile;
+import nl.dgoossens.autocraft.api.*;
 import nl.dgoossens.autocraft.helpers.ReflectionHelper;
 import nl.dgoossens.autocraft.helpers.SerializedItem;
 import org.bukkit.ChatColor;
@@ -33,39 +22,80 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
+
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
 
 public class CrafterRegistryImpl extends CrafterRegistry {
     public static final int VERSION = 2;
+    private final BukkitTask mainTick;
 
     public CrafterRegistryImpl(JavaPlugin jp) {
         super();
 
-        var speed = ConfigFile.ticksPerCraft();
-        new MainCrafterTick(this, recipeLoader).runTaskTimer(jp, speed, speed);
+        if (!ConfigFile.craftOnRedstonePulse()) {
+            var speed = ConfigFile.ticksPerCraft();
+            mainTick = new MainCrafterTick(this).runTaskTimer(jp, speed, speed);
+        } else {
+            mainTick = null;
+        }
+    }
+
+    @Override
+    public void shutdown() {
+        super.shutdown();
+
+        if (mainTick != null) {
+            mainTick.cancel();
+        }
+    }
+
+    @Override
+    public boolean isAutocrafter(Block block) {
+        var bp = new BlockPos(block);
+        return getAutocrafters(block.getWorld()).map(f -> f.get(bp) != null).orElse(false);
+    }
+
+    @Override
+    public void tick(Block block) {
+        var bp = new BlockPos(block);
+        var crafter = getAutocrafters(block.getWorld()).map(f -> f.get(bp)).orElse(null);
+        if (crafter == null) return;
+        crafter.tick(block.getChunk());
     }
 
     @Override
     public boolean checkBlock(final Location location, final Player player) {
         final Block block = location.getBlock();
         final BlockPos pos = new BlockPos(block);
-        final ItemStack m = getAutocrafters(location.getWorld()).map(f -> f.get(pos)).orElse(null);
+        final Autocrafter m = getAutocrafters(location.getWorld()).map(f -> f.get(pos)).orElse(null);
         if ((!(block.getState() instanceof Container)))
             return false;
 
         final Container container = (Container) block.getState();
         if (m == null) return false;
         if (container.isLocked() || block.getBlockPower() > 0) {
-            if (container.isLocked()) player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText("Autocrafter is locked"));
-            else player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText("Autocrafter has redstone signal blocking it"));
+            if (container.isLocked())
+                player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText("Autocrafter is locked"));
+            else
+                player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText("Autocrafter has redstone signal blocking it"));
             return true;
         }
 
-        if (!ConfigFile.isMaterialAllowed(m.getType())) {
+        if (!ConfigFile.isMaterialAllowed(m.getItem().getType())) {
             player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText("Crafting this item is disabled"));
             return true;
         }
 
-        final Set<CraftingRecipe> recipes = recipeLoader.getRecipesFor(m);
+        final Set<CraftingRecipe> recipes = recipeLoader.getRecipesFor(m.getItem());
         if (recipes == null || recipes.size() == 0) {
             player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText("Autocrafter can't craft this item"));
             return false;
@@ -285,15 +315,19 @@ public class CrafterRegistryImpl extends CrafterRegistry {
         public ItemStack getItem() {
             if (this.item == null) return null;
             ItemStack ret = ItemStack.deserialize(this.item);
-            if (meta != null) ret.setItemMeta((ItemMeta) ConfigurationSerialization.deserializeObject(meta, ConfigurationSerialization.getClassByAlias("ItemMeta")));
+            if (meta != null)
+                ret.setItemMeta((ItemMeta) ConfigurationSerialization.deserializeObject(meta, ConfigurationSerialization.getClassByAlias("ItemMeta")));
             try {
                 Object tag = mojangsonParser.getMethod("parse", String.class).invoke(null, nbt);
                 Object nullObject = null;
                 Object nmsStack = craftItemStack.getMethod("asNMSCopy", ItemStack.class).invoke(null, ret);
-                if (!tag.toString().equalsIgnoreCase("{}")) nmsStack.getClass().getMethod("setTag", nbtTagCompound).invoke(nmsStack, tag);
+                if (!tag.toString().equalsIgnoreCase("{}"))
+                    nmsStack.getClass().getMethod("setTag", nbtTagCompound).invoke(nmsStack, tag);
                 else nmsStack.getClass().getMethod("setTag", nbtTagCompound).invoke(nmsStack, nullObject);
                 ret = (ItemStack) craftItemStack.getMethod("asCraftMirror", itemStack).invoke(null, nmsStack);
-            } catch (Exception x) { x.printStackTrace(); }
+            } catch (Exception x) {
+                x.printStackTrace();
+            }
             return ret;
         }
 
@@ -306,9 +340,12 @@ public class CrafterRegistryImpl extends CrafterRegistry {
             try {
                 Object nmsStack = craftItemStack.getMethod("asNMSCopy", ItemStack.class).invoke(null, item);
                 Object tag = nbtTagCompound.newInstance();
-                if ((boolean) nmsStack.getClass().getMethod("hasTag").invoke(nmsStack)) tag = nmsStack.getClass().getMethod("getTag").invoke(nmsStack);
+                if ((boolean) nmsStack.getClass().getMethod("hasTag").invoke(nmsStack))
+                    tag = nmsStack.getClass().getMethod("getTag").invoke(nmsStack);
                 nbt = tag.toString();
-            } catch (Exception x) { x.printStackTrace(); }
+            } catch (Exception x) {
+                x.printStackTrace();
+            }
         }
     }
 }
