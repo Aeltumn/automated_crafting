@@ -1,5 +1,10 @@
-package nl.dgoossens.autocraft.impl;
+package com.aeltumn.autocraft.impl;
 
+import com.aeltumn.autocraft.AutomatedCrafting;
+import com.aeltumn.autocraft.ConfigFile;
+import com.aeltumn.autocraft.api.*;
+import com.aeltumn.autocraft.helpers.ReflectionHelper;
+import com.aeltumn.autocraft.helpers.SerializedItem;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
@@ -8,11 +13,6 @@ import com.google.gson.stream.JsonWriter;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
-import nl.dgoossens.autocraft.AutomatedCrafting;
-import nl.dgoossens.autocraft.ConfigFile;
-import nl.dgoossens.autocraft.api.*;
-import nl.dgoossens.autocraft.helpers.ReflectionHelper;
-import nl.dgoossens.autocraft.helpers.SerializedItem;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.block.Block;

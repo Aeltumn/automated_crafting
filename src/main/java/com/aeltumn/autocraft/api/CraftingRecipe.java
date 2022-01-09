@@ -1,4 +1,4 @@
-package nl.dgoossens.autocraft.api;
+package com.aeltumn.autocraft.api;
 
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.Inventory;

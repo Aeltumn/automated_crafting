@@ -1,7 +1,7 @@
-package nl.dgoossens.autocraft.api;
+package com.aeltumn.autocraft.api;
 
-import nl.dgoossens.autocraft.AutomatedCrafting;
-import nl.dgoossens.autocraft.RecipeLoader;
+import com.aeltumn.autocraft.AutomatedCrafting;
+import com.aeltumn.autocraft.RecipeLoader;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;

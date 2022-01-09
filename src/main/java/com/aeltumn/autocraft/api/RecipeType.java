@@ -1,4 +1,4 @@
-package nl.dgoossens.autocraft.api;
+package com.aeltumn.autocraft.api;
 
 /**
  * The possible shapes of a crafting recipe.

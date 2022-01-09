@@ -1,4 +1,4 @@
-package nl.dgoossens.autocraft.api;
+package com.aeltumn.autocraft.api;
 
 /**
  * A simple implementation of a Pair that stores a key and value.

@@ -1,9 +1,9 @@
-package nl.dgoossens.autocraft.api;
+package com.aeltumn.autocraft.api;
 
-import nl.dgoossens.autocraft.AutomatedCrafting;
-import nl.dgoossens.autocraft.ConfigFile;
-import nl.dgoossens.autocraft.CreationListener;
-import nl.dgoossens.autocraft.helpers.Utils;
+import com.aeltumn.autocraft.AutomatedCrafting;
+import com.aeltumn.autocraft.ConfigFile;
+import com.aeltumn.autocraft.CreationListener;
+import com.aeltumn.autocraft.helpers.Utils;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.block.Block;

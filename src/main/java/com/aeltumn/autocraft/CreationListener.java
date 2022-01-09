@@ -1,4 +1,4 @@
-package nl.dgoossens.autocraft;
+package com.aeltumn.autocraft;
 
 import org.bukkit.Material;
 import org.bukkit.Nameable;

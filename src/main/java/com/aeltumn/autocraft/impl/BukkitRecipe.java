@@ -1,12 +1,12 @@
-package nl.dgoossens.autocraft.impl;
+package com.aeltumn.autocraft.impl;
 
-import nl.dgoossens.autocraft.AutomatedCrafting;
-import nl.dgoossens.autocraft.api.CraftSolution;
-import nl.dgoossens.autocraft.api.CraftingRecipe;
-import nl.dgoossens.autocraft.api.Pair;
-import nl.dgoossens.autocraft.api.RecipeType;
-import nl.dgoossens.autocraft.helpers.ReflectionHelper;
-import nl.dgoossens.autocraft.helpers.Utils;
+import com.aeltumn.autocraft.AutomatedCrafting;
+import com.aeltumn.autocraft.api.CraftSolution;
+import com.aeltumn.autocraft.api.CraftingRecipe;
+import com.aeltumn.autocraft.api.Pair;
+import com.aeltumn.autocraft.api.RecipeType;
+import com.aeltumn.autocraft.helpers.ReflectionHelper;
+import com.aeltumn.autocraft.helpers.Utils;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;

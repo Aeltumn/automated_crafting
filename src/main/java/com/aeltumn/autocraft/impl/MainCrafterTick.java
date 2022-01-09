@@ -1,7 +1,7 @@
-package nl.dgoossens.autocraft.impl;
+package com.aeltumn.autocraft.impl;
 
-import nl.dgoossens.autocraft.api.Autocrafter;
-import nl.dgoossens.autocraft.api.ChunkIdentifier;
+import com.aeltumn.autocraft.api.Autocrafter;
+import com.aeltumn.autocraft.api.ChunkIdentifier;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.World;

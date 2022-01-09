@@ -1,10 +1,10 @@
-package nl.dgoossens.autocraft;
+package com.aeltumn.autocraft;
 
-import nl.dgoossens.autocraft.api.CraftingRecipe;
-import nl.dgoossens.autocraft.api.RecipeType;
-import nl.dgoossens.autocraft.impl.BukkitRecipe;
-import nl.dgoossens.autocraft.impl.recipes.FireworksRecipe;
-import nl.dgoossens.autocraft.impl.recipes.SuspicousStewRecipe;
+import com.aeltumn.autocraft.api.CraftingRecipe;
+import com.aeltumn.autocraft.api.RecipeType;
+import com.aeltumn.autocraft.impl.BukkitRecipe;
+import com.aeltumn.autocraft.impl.recipes.FireworksRecipe;
+import com.aeltumn.autocraft.impl.recipes.SuspicousStewRecipe;
 import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;

@@ -6,7 +6,7 @@ plugins {
     id 'kr.entree.spigradle' version '2.3.2'
 }
 
-group 'nl.dgoossens'
+group 'com.aeltumn'
 version '2.6'
 
 sourceCompatibility = 17

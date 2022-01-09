@@ -1,6 +1,6 @@
-package nl.dgoossens.autocraft.impl.recipes;
+package com.aeltumn.autocraft.impl.recipes;
 
-import nl.dgoossens.autocraft.impl.CustomRecipe;
+import com.aeltumn.autocraft.impl.CustomRecipe;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;

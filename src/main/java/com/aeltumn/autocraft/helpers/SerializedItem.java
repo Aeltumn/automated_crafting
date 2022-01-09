@@ -1,4 +1,4 @@
-package nl.dgoossens.autocraft.helpers;
+package com.aeltumn.autocraft.helpers;
 
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;

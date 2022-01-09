@@ -1,9 +1,9 @@
-package nl.dgoossens.autocraft.impl;
+package com.aeltumn.autocraft.impl;
 
-import nl.dgoossens.autocraft.api.CraftSolution;
-import nl.dgoossens.autocraft.api.CraftingRecipe;
-import nl.dgoossens.autocraft.api.RecipeType;
-import nl.dgoossens.autocraft.helpers.Utils;
+import com.aeltumn.autocraft.api.CraftSolution;
+import com.aeltumn.autocraft.api.CraftingRecipe;
+import com.aeltumn.autocraft.api.RecipeType;
+import com.aeltumn.autocraft.helpers.Utils;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;

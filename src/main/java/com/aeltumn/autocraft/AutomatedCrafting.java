@@ -1,9 +1,9 @@
-package nl.dgoossens.autocraft;
+package com.aeltumn.autocraft;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import nl.dgoossens.autocraft.api.CrafterRegistry;
-import nl.dgoossens.autocraft.impl.CrafterRegistryImpl;
+import com.aeltumn.autocraft.api.CrafterRegistry;
+import com.aeltumn.autocraft.impl.CrafterRegistryImpl;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
