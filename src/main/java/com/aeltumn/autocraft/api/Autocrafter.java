@@ -90,7 +90,7 @@ public class Autocrafter {
                     }
                 }
                 for (var item : output) {
-                    if (!Utils.addItem(inventoryCopy, item)) {
+                    if (!Utils.addItem(inventoryCopy, item.clone())) {
                         continue outer;
                     }
                 }
