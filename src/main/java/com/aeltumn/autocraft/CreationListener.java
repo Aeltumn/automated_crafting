@@ -1,5 +1,6 @@
 package com.aeltumn.autocraft;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Nameable;
 import org.bukkit.block.*;
@@ -58,7 +59,7 @@ public class CreationListener implements Listener {
         if (isValidBlock(bl, true)) {
             e.setCancelled(true);
             if (ConfigFile.craftOnRedstonePulse()) {
-                AutomatedCrafting.INSTANCE.getCrafterRegistry().tick(bl);
+                Bukkit.getScheduler().runTask(AutomatedCrafting.INSTANCE, () -> AutomatedCrafting.INSTANCE.getCrafterRegistry().tick(bl));
             }
         }
     }
