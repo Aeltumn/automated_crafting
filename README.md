@@ -1,4 +1,6 @@
 # Automated Crafting
+> This plugin will no longer be updated beyond 1.29.2 as vanilla has introduced the Crafter block making this plugin obsolete.
+
 An open-source plugin for Bukkit which adds autocrafters capable of automatically crafting anything.
 
 <br/>
