@@ -1,12 +1,12 @@
 package com.aeltumn.autocraft;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.aeltumn.autocraft.api.CrafterRegistry;
 import com.aeltumn.autocraft.impl.CrafterRegistryImpl;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import io.papermc.paper.command.brigadier.Commands;
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.Bukkit;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class AutomatedCrafting extends JavaPlugin {
@@ -35,6 +35,21 @@ public class AutomatedCrafting extends JavaPlugin {
         recipeLoader = new RecipeLoader(this); //The recipe loader keeps track of all the recipes the autocrafters support.
         registry = new CrafterRegistryImpl(this); //The registry tracks all autocrafters and ticks them to craft every second.
         Bukkit.getPluginManager().registerEvents(new CreationListener(), this);
+
+        // Register the reload command
+        var lifecycleManager = getLifecycleManager();
+        lifecycleManager.registerEventHandler(LifecycleEvents.COMMANDS, event -> {
+            var commands = event.registrar();
+            commands.register(
+                Commands.literal("reloadrecipes")
+                    .requires(source -> source.getSender().hasPermission("automatedcrafting.reload"))
+                    .executes(ctx -> {
+                        getRecipeLoader().reload(ctx.getSource().getSender());
+                        return 0;
+                    }).build(),
+                "Reloads all recipes for the autocrafters, gets ran automatically when running /reload!"
+            );
+        });
     }
 
     @Override
@@ -47,14 +62,6 @@ public class AutomatedCrafting extends JavaPlugin {
         registry.shutdown();
         INSTANCE = null;
     }
-
-    @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (command.getName().equalsIgnoreCase("reloadrecipes"))
-            getRecipeLoader().reload(sender);
-        return false;
-    }
-
 
     public CrafterRegistry getCrafterRegistry() {
         return registry;

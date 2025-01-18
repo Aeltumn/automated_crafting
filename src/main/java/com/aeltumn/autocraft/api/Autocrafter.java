@@ -4,31 +4,43 @@ import com.aeltumn.autocraft.AutomatedCrafting;
 import com.aeltumn.autocraft.ConfigFile;
 import com.aeltumn.autocraft.CreationListener;
 import com.aeltumn.autocraft.helpers.Utils;
+import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.Container;
 import org.bukkit.block.data.Directional;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.ItemFrame;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
 
 /**
  * Stores all the data we have on an individual autocrafter.
  */
 public class Autocrafter {
+    private final String world;
     private final BlockPos position;
-    private final ItemStack item;
+    @Nullable
+    private ItemStack item;
     private boolean broken;
 
-    Autocrafter(BlockPos position, ItemStack item) {
+    Autocrafter(String world, BlockPos position, @Nullable ItemStack item) {
+        this.world = world;
         this.position = position;
         this.item = item;
     }
 
-    Autocrafter(long l, ItemStack item) {
-        this(BlockPos.fromLong(l), item);
+    Autocrafter(String world, long l) {
+        this(world, BlockPos.fromLong(l), null);
     }
 
     /**
@@ -55,11 +67,15 @@ public class Autocrafter {
             if (bl.getBlockPower() > 0) return;
         }
 
+        // Get the item, if we can't find it ignore
+        var itemType = getItem(chunk);
+        if (itemType.isEmpty()) return;
+
         // Never craft a material that is banned
-        if (!ConfigFile.isMaterialAllowed(item.getType())) return;
+        if (!ConfigFile.isMaterialAllowed(itemType.getType())) return;
 
         outer:
-        for (CraftingRecipe recipe : AutomatedCrafting.INSTANCE.getRecipeLoader().getRecipesFor(item)) {
+        for (CraftingRecipe recipe : AutomatedCrafting.INSTANCE.getRecipeLoader().getRecipesFor(itemType)) {
             if (recipe == null) continue;
 
             // Check if the dropper contains all required items to craft the result.
@@ -154,17 +170,61 @@ public class Autocrafter {
         return this.position.equals(pos);
     }
 
-    public ItemStack getItem() {
-        return item;
+    @NotNull
+    public ItemStack getItem(Chunk baseChunk) {
+        if (item != null) {
+            return item;
+        }
+
+        // Try to get an item frame attached to this auto crafter,
+        // always set the item to empty to indicate we are done trying!
+        var world = Bukkit.getWorld(this.world);
+        if (world != null) {
+            var chunks = new HashSet<Chunk>();
+            var entities = new HashSet<Entity>();
+            for (var direction : List.of(BlockFace.NORTH, BlockFace.EAST, BlockFace.WEST, BlockFace.SOUTH, BlockFace.UP, BlockFace.DOWN)) {
+                var chunk = world.getChunkAt(
+                    new Location(
+                        world,
+                        (baseChunk.getX() << 4) + position.getX() + direction.getModX(),
+                        position.getY() + direction.getModY(),
+                        (baseChunk.getZ() << 4) + position.getZ() + direction.getModZ()
+                    )
+                );
+
+                // Test each chunk once
+                if (chunks.contains(chunk)) continue;
+                chunks.add(chunk);
+
+                // Ignore until entities are loaded!
+                if (!chunk.isEntitiesLoaded()) return ItemStack.empty();
+                entities.addAll(List.of(chunk.getEntities()));
+            }
+
+            var autocrafterBlock = baseChunk.getBlock(position.getX(), position.getY(), position.getZ());
+            for (var entity : entities) {
+                if (entity instanceof ItemFrame itemFrame) {
+                    var entityBlock = itemFrame.getLocation().getBlock();
+                    var attachedFace = itemFrame.getAttachedFace();
+                    var attachedBlock = entityBlock.getRelative(attachedFace);
+                    if (attachedBlock.equals(autocrafterBlock)) {
+                        item = itemFrame.getItem();
+                        return item;
+                    }
+                }
+            }
+            item = ItemStack.empty();
+        }
+        return ItemStack.empty();
     }
 
     @Override
     public String toString() {
         return "Autocrafter{" +
-                "position=" + getPosition() +
-                ", positionLong=" + getPositionAsLong() +
-                ", item=" + item +
-                ", broken=" + broken +
-                '}';
+            "position=" + getPosition() +
+            ", positionLong=" + getPositionAsLong() +
+            ", item=" + item +
+            ", broken=" + broken +
+            '}';
     }
 }

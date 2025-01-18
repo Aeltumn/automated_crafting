@@ -16,6 +16,7 @@ import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.hanging.HangingPlaceEvent;
 import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.bukkit.event.world.WorldSaveEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -147,5 +148,10 @@ public class CreationListener implements Listener {
                 }
             }.runTaskLater(AutomatedCrafting.INSTANCE, 1);
         }
+    }
+
+    @EventHandler
+    public void onSave(WorldSaveEvent event) {
+        AutomatedCrafting.INSTANCE.getCrafterRegistry().forceSave();
     }
 }

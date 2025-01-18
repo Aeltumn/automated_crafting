@@ -1,0 +1,5 @@
+name: AutomatedCrafting
+version: '2.7.0'
+main: com.aeltumn.autocraft.AutomatedCrafting
+description: An open-source autocrafting plugin for Bukkit.
+api-version: '1.21.4'

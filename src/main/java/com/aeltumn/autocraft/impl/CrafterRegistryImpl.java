@@ -2,25 +2,25 @@ package com.aeltumn.autocraft.impl;
 
 import com.aeltumn.autocraft.AutomatedCrafting;
 import com.aeltumn.autocraft.ConfigFile;
-import com.aeltumn.autocraft.api.*;
-import com.aeltumn.autocraft.helpers.ReflectionHelper;
-import com.aeltumn.autocraft.helpers.SerializedItem;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.aeltumn.autocraft.api.Autocrafter;
+import com.aeltumn.autocraft.api.AutocrafterPositions;
+import com.aeltumn.autocraft.api.BlockPos;
+import com.aeltumn.autocraft.api.ChunkIdentifier;
+import com.aeltumn.autocraft.api.CrafterRegistry;
+import com.aeltumn.autocraft.api.CraftingRecipe;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.block.Container;
-import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -28,14 +28,13 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 
 public class CrafterRegistryImpl extends CrafterRegistry {
-    public static final int VERSION = 2;
+    public static final int VERSION = 3;
     private final BukkitTask mainTick;
 
     public CrafterRegistryImpl(JavaPlugin jp) {
@@ -90,12 +89,12 @@ public class CrafterRegistryImpl extends CrafterRegistry {
             return true;
         }
 
-        if (!ConfigFile.isMaterialAllowed(m.getItem().getType())) {
+        if (!ConfigFile.isMaterialAllowed(m.getItem(block.getChunk()).getType())) {
             player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText("Crafting this item is disabled"));
             return true;
         }
 
-        final Set<CraftingRecipe> recipes = recipeLoader.getRecipesFor(m.getItem());
+        final Set<CraftingRecipe> recipes = recipeLoader.getRecipesFor(m.getItem(block.getChunk()));
         if (recipes == null || recipes.size() == 0) {
             player.spigot().sendMessage(ChatMessageType.ACTION_BAR, getText("Autocrafter can't craft this item"));
             return false;
@@ -117,7 +116,7 @@ public class CrafterRegistryImpl extends CrafterRegistry {
         BlockPos el = new BlockPos(l.getBlockX(), l.getBlockY(), l.getBlockZ());
         AutocrafterPositions am = getOrCreateAutocrafters(l.getWorld());
         am.destroy(el); //Destroy old ones
-        am.add(el, type);  //Add the new one
+        am.add(el, type); //Add the new one
         markDirty();
         return true;
     }
@@ -141,37 +140,12 @@ public class CrafterRegistryImpl extends CrafterRegistry {
 
         //Legacyload
         if (legacyFile.exists()) {
-            try {
-                FileReader fr = new FileReader(legacyFile);
-                JsonReader jr = new JsonReader(fr);
-                jr.beginObject();
-                Gson g = new GsonBuilder().create();
-                while (jr.hasNext()) {
-                    String n = jr.nextName();
-                    LegacyBlockPos lbp = g.fromJson(jr, LegacyBlockPos.class);
-                    ItemStack it = AutomatedCrafting.GSON.fromJson(n, LegacySerializedItem.class).getItem();
-                    AutocrafterPositions m = crafters.getOrDefault(lbp.world, new AutocrafterPositions());
-                    m.add(new BlockPos(lbp.x, lbp.y, lbp.z), it);
-                    if (!m.isEmpty())
-                        crafters.put(lbp.world, m);
-                }
-                jr.endObject();
-                jr.close();
-                fr.close();
-                AutomatedCrafting.INSTANCE.info("Loaded autocrafters from legacy configuration file!");
-            } catch (Exception x) {
-                AutomatedCrafting.INSTANCE.warning("An error occurred whilst legacy loading autocrafters from an old configuration file. Please rebuild all autocrafters!");
-            }
-
-            legacyFile.delete(); //Remove old file
-            legacyLoaded = true;
+            AutomatedCrafting.INSTANCE.warning("Found a legacy configuration file `droppers.json`. Please run an older version of Automated Crafting v2.6.2 or older to load from this file.");
         }
 
         //Load modern file
         boolean converted = false;
         if (file.exists()) {
-            boolean legacyItemNames = false;
-
             try {
                 FileReader fr = new FileReader(file);
                 JsonReader jr = new JsonReader(fr);
@@ -180,22 +154,9 @@ public class CrafterRegistryImpl extends CrafterRegistry {
                 jr.beginObject();
                 jr.nextName();
                 int version = jr.nextInt();
-                if (version != VERSION) {
-                    // enable the converted flag so we immediately save the updated
-                    // configuration file
-                    converted = true;
-                    if (version == 1) {
-                        legacyItemNames = true;
-                    } else {
-                        AutomatedCrafting.INSTANCE.warning("You were running an old unsupported version of AutomatedCrafting (file version " + version + ", current version: " + VERSION + ") and all exsisting autocrafters have been invalidated, sorry! (every autocrafter will need to be rebuilt)");
-                        return;
-                    }
-
-                    AutomatedCrafting.INSTANCE.info("Loading configuration file from an older version of AutomatedCrafting. (file version " + version + ", current version: " + VERSION + ") The file will automatically be converted to the new version.");
-                }
                 while (jr.hasNext()) {
                     String world = jr.nextName();
-                    AutocrafterPositions m = new AutocrafterPositions();
+                    AutocrafterPositions m = new AutocrafterPositions(world);
                     jr.beginObject();
                     while (jr.hasNext()) {
                         String n = jr.nextName(); //Chunk identifier code
@@ -212,20 +173,29 @@ public class CrafterRegistryImpl extends CrafterRegistry {
                             jr.endObject();
                             continue;
                         }
-                        jr.beginObject();
-                        while (jr.hasNext()) {
-                            String n2 = jr.nextName(); //Chunk identifier code
-                            long l;
-                            try {
-                                l = Long.parseLong(n2);
-                            } catch (NumberFormatException ignored) {
+                        if (version < 3) {
+                            jr.beginObject();
+                            while (jr.hasNext()) {
+                                String n2 = jr.nextName(); //Chunk identifier code
                                 jr.skipValue();
-                                continue;
+
+                                long l;
+                                try {
+                                    l = Long.parseLong(n2);
+                                } catch (NumberFormatException ignored) {
+                                    continue;
+                                }
+                                //Update method of saving items to json
+                                m.add(ci, l);
                             }
-                            //Update method of saving items to json
-                            m.add(ci, l, ((SerializedItem) AutomatedCrafting.GSON.fromJson(jr, SerializedItem.class)).getItem(legacyItemNames));
+                            jr.endObject();
+                        } else {
+                            jr.beginArray();
+                            while (jr.hasNext()) {
+                                m.add(ci, jr.nextLong());
+                            }
+                            jr.endArray();
                         }
-                        jr.endObject();
                     }
                     jr.endObject();
 
@@ -270,13 +240,12 @@ public class CrafterRegistryImpl extends CrafterRegistry {
                 for (ChunkIdentifier ci : m.get().listChunks()) {
                     jw.name(String.valueOf(ci.toLong()));
                     ArrayList<Autocrafter> positions = m.get().getInChunk(ci);
-                    jw.beginObject();
+                    jw.beginArray();
                     for (Autocrafter a : positions) {
                         if (a.isBroken()) continue; //Don't save broken ones.
-                        jw.name(String.valueOf(a.getPositionAsLong()));
-                        jw.jsonValue(AutomatedCrafting.GSON.toJson(new SerializedItem(a.getItem())));
+                        jw.value(a.getPositionAsLong());
                     }
-                    jw.endObject();
+                    jw.endArray();
                 }
                 jw.endObject();
             }
@@ -289,63 +258,5 @@ public class CrafterRegistryImpl extends CrafterRegistry {
         }
 
         saveTime = Long.MAX_VALUE; //Save again at the end of time.
-    }
-
-    //Used for legacy loading of old data files.
-    public static class LegacyBlockPos {
-        private int x, y, z;
-        private String world;
-    }
-
-    //Used for legacy loading of old data files.
-    public static class LegacySerializedItem {
-        private static final Class<?> mojangsonParser = ReflectionHelper.getNMSClass("nbt.MojangsonParser").orElse(null);
-        private static final Class<?> craftItemStack = ReflectionHelper.getCraftBukkitClass("inventory.CraftItemStack").orElse(null);
-        private static final Class<?> nbtTagCompound = ReflectionHelper.getNMSClass("nbt.NBTTagCompound").orElse(null);
-        private static final Class<?> itemStack = ReflectionHelper.getNMSClass("world.item.ItemStack").orElse(null);
-
-        private Map<String, Object> item;
-        private Map<String, Object> meta;
-        private String nbt;
-
-        public LegacySerializedItem(ItemStack item) {
-            build(item);
-        }
-
-        public ItemStack getItem() {
-            if (this.item == null) return null;
-            ItemStack ret = ItemStack.deserialize(this.item);
-            if (meta != null)
-                ret.setItemMeta((ItemMeta) ConfigurationSerialization.deserializeObject(meta, ConfigurationSerialization.getClassByAlias("ItemMeta")));
-            try {
-                Object tag = mojangsonParser.getMethod("parse", String.class).invoke(null, nbt);
-                Object nullObject = null;
-                Object nmsStack = craftItemStack.getMethod("asNMSCopy", ItemStack.class).invoke(null, ret);
-                if (!tag.toString().equalsIgnoreCase("{}"))
-                    nmsStack.getClass().getMethod("setTag", nbtTagCompound).invoke(nmsStack, tag);
-                else nmsStack.getClass().getMethod("setTag", nbtTagCompound).invoke(nmsStack, nullObject);
-                ret = (ItemStack) craftItemStack.getMethod("asCraftMirror", itemStack).invoke(null, nmsStack);
-            } catch (Exception x) {
-                x.printStackTrace();
-            }
-            return ret;
-        }
-
-        private void build(ItemStack item) {
-            if (item == null) return;
-            if (item.hasItemMeta()) meta = item.getItemMeta().serialize();
-            ItemStack copy = item.clone();
-            copy.setItemMeta(null);
-            this.item = copy.serialize();
-            try {
-                Object nmsStack = craftItemStack.getMethod("asNMSCopy", ItemStack.class).invoke(null, item);
-                Object tag = nbtTagCompound.newInstance();
-                if ((boolean) nmsStack.getClass().getMethod("hasTag").invoke(nmsStack))
-                    tag = nmsStack.getClass().getMethod("getTag").invoke(nmsStack);
-                nbt = tag.toString();
-            } catch (Exception x) {
-                x.printStackTrace();
-            }
-        }
     }
 }

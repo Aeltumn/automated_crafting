@@ -1,5 +1,6 @@
 package com.aeltumn.autocraft.api;
 
+import org.bukkit.World;
 import org.bukkit.inventory.ItemStack;
 
 import javax.annotation.Nullable;
@@ -11,10 +12,12 @@ import java.util.Set;
  * An object storing information on all autocrafters in a single world.
  */
 public class AutocrafterPositions {
+    private final String world;
     private final HashMap<ChunkIdentifier, ArrayList<Autocrafter>> data;
 
-    public AutocrafterPositions() {
-        data = new HashMap<>();
+    public AutocrafterPositions(String world) {
+        this.world = world;
+        this.data = new HashMap<>();
     }
 
     /**
@@ -63,15 +66,15 @@ public class AutocrafterPositions {
      */
     public void add(BlockPos position, ItemStack item) {
         ChunkIdentifier ci = new ChunkIdentifier(position);
-        data.computeIfAbsent(ci, (a) -> new ArrayList<>()).add(new Autocrafter(position.subtract(ci.getPosition()), item));
+        data.computeIfAbsent(ci, (a) -> new ArrayList<>()).add(new Autocrafter(world, position.subtract(ci.getPosition()), item));
     }
 
     /**
      * Adds a new autocrafter to this data object in a given chunk
      * with a long created by the {@link Autocrafter#getPositionAsLong()} method in the chunk.
      */
-    public void add(ChunkIdentifier chunk, long l, ItemStack item) {
-        data.computeIfAbsent(chunk, (a) -> new ArrayList<>()).add(new Autocrafter(l, item));
+    public void add(ChunkIdentifier chunk, long l) {
+        data.computeIfAbsent(chunk, (a) -> new ArrayList<>()).add(new Autocrafter(world,l));
     }
 
     /**

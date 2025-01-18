@@ -80,7 +80,7 @@ public abstract class CrafterRegistry {
      * Create one if none exist.
      */
     public AutocrafterPositions getOrCreateAutocrafters(World world) {
-        return crafters.computeIfAbsent(world.getName(), (w) -> new AutocrafterPositions());
+        return crafters.computeIfAbsent(world.getName(), AutocrafterPositions::new);
     }
 
     /**

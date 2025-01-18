@@ -20,19 +20,22 @@ public class SuspicousStewRecipe extends CustomRecipe {
     public static final Map<Material, PotionEffect> INGREDIENTS = new HashMap<>();
 
     static {
-        addIngredient(Material.DANDELION, PotionEffectType.SATURATION, 7);
-        addIngredient(Material.POPPY, PotionEffectType.NIGHT_VISION, 5);
-        addIngredient(Material.BLUE_ORCHID, PotionEffectType.SATURATION, 7);
-        addIngredient(Material.ALLIUM, PotionEffectType.FIRE_RESISTANCE, 4);
-        addIngredient(Material.RED_TULIP, PotionEffectType.WEAKNESS, 9);
-        addIngredient(Material.ORANGE_TULIP, PotionEffectType.WEAKNESS, 9);
-        addIngredient(Material.WHITE_TULIP, PotionEffectType.WEAKNESS, 9);
-        addIngredient(Material.PINK_TULIP, PotionEffectType.WEAKNESS, 9);
-        addIngredient(Material.OXEYE_DAISY, PotionEffectType.REGENERATION, 8);
-        addIngredient(Material.CORNFLOWER, PotionEffectType.JUMP, 6);
-        addIngredient(Material.WITHER_ROSE, PotionEffectType.WITHER, 8);
-        addIngredient(Material.LILY_OF_THE_VALLEY, PotionEffectType.POISON, 12);
-        addIngredient(Material.AZURE_BLUET, PotionEffectType.BLINDNESS, 8);
+        addIngredient(Material.DANDELION, PotionEffectType.SATURATION, 0.35f);
+        addIngredient(Material.TORCHFLOWER, PotionEffectType.NIGHT_VISION, 5.0f);
+        addIngredient(Material.POPPY, PotionEffectType.NIGHT_VISION, 5.0f);
+        addIngredient(Material.BLUE_ORCHID, PotionEffectType.SATURATION, 0.35f);
+        addIngredient(Material.ALLIUM, PotionEffectType.FIRE_RESISTANCE, 3.0f);
+        addIngredient(Material.AZURE_BLUET, PotionEffectType.BLINDNESS, 11.0f);
+        addIngredient(Material.RED_TULIP, PotionEffectType.WEAKNESS, 7.0f);
+        addIngredient(Material.ORANGE_TULIP, PotionEffectType.WEAKNESS, 7.0f);
+        addIngredient(Material.WHITE_TULIP, PotionEffectType.WEAKNESS, 7.0f);
+        addIngredient(Material.PINK_TULIP, PotionEffectType.WEAKNESS, 7.0f);
+        addIngredient(Material.OXEYE_DAISY, PotionEffectType.REGENERATION, 7.0f);
+        addIngredient(Material.CORNFLOWER, PotionEffectType.JUMP_BOOST, 5.0f);
+        addIngredient(Material.WITHER_ROSE, PotionEffectType.WITHER, 7.0f);
+        addIngredient(Material.LILY_OF_THE_VALLEY, PotionEffectType.POISON, 11.0f);
+        addIngredient(Material.OPEN_EYEBLOSSOM, PotionEffectType.BLINDNESS, 11.0f);
+        addIngredient(Material.CLOSED_EYEBLOSSOM, PotionEffectType.NAUSEA, 7.0f);
     }
 
     private final Material ingredient;
@@ -45,8 +48,8 @@ public class SuspicousStewRecipe extends CustomRecipe {
     /**
      * Adds a new suspcious stew type.
      */
-    public static void addIngredient(Material material, PotionEffectType type, int duration) {
-        INGREDIENTS.put(material, new PotionEffect(type, type.isInstant() ? duration : duration * 20, 0, false, true));
+    public static void addIngredient(Material material, PotionEffectType type, float effectLength) {
+        INGREDIENTS.put(material, new PotionEffect(type, (int) Math.floor(effectLength * 20), 0, false, true));
     }
 
     @Override

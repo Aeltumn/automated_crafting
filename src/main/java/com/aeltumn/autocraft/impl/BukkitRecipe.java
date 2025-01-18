@@ -5,16 +5,26 @@ import com.aeltumn.autocraft.api.CraftSolution;
 import com.aeltumn.autocraft.api.CraftingRecipe;
 import com.aeltumn.autocraft.api.Pair;
 import com.aeltumn.autocraft.api.RecipeType;
-import com.aeltumn.autocraft.helpers.ReflectionHelper;
 import com.aeltumn.autocraft.helpers.Utils;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.inventory.*;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.Recipe;
+import org.bukkit.inventory.RecipeChoice;
+import org.bukkit.inventory.ShapedRecipe;
+import org.bukkit.inventory.ShapelessRecipe;
 import org.bukkit.inventory.meta.BlockStateMeta;
 
-import java.lang.reflect.Field;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -24,8 +34,6 @@ import java.util.stream.Collectors;
  * inventory as for taking them.
  */
 public class BukkitRecipe implements CraftingRecipe {
-    private static final Class<?> craftMetaBlockState = ReflectionHelper.getCraftBukkitClass("inventory.CraftMetaBlockState").orElse(null);
-    private static final Field blockEntityTag = ReflectionHelper.getField(craftMetaBlockState, "blockEntityTag").orElse(null);
     private final ItemStack result;
     private NamespacedKey namespacedKey = null;
     private RecipeType type = RecipeType.UNKNOWN;
@@ -106,13 +114,13 @@ public class BukkitRecipe implements CraftingRecipe {
     @Override
     public String toString() {
         return "BukkitRecipe{" +
-                "type=" + type +
-                ", result=" + result +
-                ", requirements=" + requirements +
-                ", pattern=" + Arrays.toString(pattern) +
-                ", key=" + key +
-                ", ingredients=" + ingredients +
-                '}';
+            "type=" + type +
+            ", result=" + result +
+            ", requirements=" + requirements +
+            ", pattern=" + Arrays.toString(pattern) +
+            ", key=" + key +
+            ", ingredients=" + ingredients +
+            '}';
     }
 
     public RecipeType getType() {
@@ -198,7 +206,7 @@ public class BukkitRecipe implements CraftingRecipe {
 
         // Get the cheapest solution or the only solution if there is one (which is the case in most recipes)
         return solutions.size() == 1 ? solutions.get(0) :
-                solutions.stream().min(Comparator.comparing(RequirementSolution::getCost)).orElseThrow(() -> new UnsupportedOperationException("No solutions found, how?"));
+            solutions.stream().min(Comparator.comparing(RequirementSolution::getCost)).orElseThrow(() -> new UnsupportedOperationException("No solutions found, how?"));
     }
 
     @Override
@@ -208,13 +216,7 @@ public class BukkitRecipe implements CraftingRecipe {
         // For all block state meta items we clear the block entity tag off the item we use for comparisons
         // so a full shulker box is accepted as craftable
         if (clone.hasItemMeta() && clone.getItemMeta() instanceof BlockStateMeta meta) {
-            if (blockEntityTag != null) {
-                try {
-                    blockEntityTag.set(meta, null);
-                } catch (Exception x) {
-                    x.printStackTrace();
-                }
-            }
+            meta.clearBlockState();
             clone.setItemMeta(meta);
         }
 
@@ -351,10 +353,10 @@ public class BukkitRecipe implements CraftingRecipe {
         @Override
         public String toString() {
             return "RequirementSolution{" +
-                    "history=" + history +
-                    ", containerItems=" + containerItems +
-                    ", state=" + Arrays.toString(state) +
-                    '}';
+                "history=" + history +
+                ", containerItems=" + containerItems +
+                ", state=" + Arrays.toString(state) +
+                '}';
         }
     }
 
@@ -388,9 +390,9 @@ public class BukkitRecipe implements CraftingRecipe {
         @Override
         public String toString() {
             return "RecipeRequirement{" +
-                    "item=" + item +
-                    ", amount=" + amount +
-                    '}';
+                "item=" + item +
+                ", amount=" + amount +
+                '}';
         }
     }
 }
